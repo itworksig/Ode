@@ -1,0 +1,39 @@
+nav:
+  blog: 博客
+  notes: 笔记
+  about: 关于
+  archive: 归档
+  home: 首页
+  lang_switch: English
+
+recent:
+  title: 最新文章
+  more: 查看归档 →
+
+featured:
+  title: 精选内容
+
+notebook:
+  title: 标签
+
+about:
+  title: 关于 Ode
+  description: >
+    参考站点给人的感觉不是复杂，而是克制。
+    导航像标签条，正文像纸面，模块边界清楚，内容比装饰更靠前。
+    Ode 的第一版沿着这个方向走，但保留你后续扩展的空间。
+
+blog:
+  title: 博客文章
+  description: 所有文章，按时间倒序排列。
+
+projects:
+  title: 精选项目
+
+links:
+  title: 快速链接
+
+footer:
+  text: "版权所有 2024–2026 Ode。"
+  served: "由 Ode (Next.js) 提供服务，站点版本"
+  source: "源代码"

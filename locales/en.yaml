@@ -1,0 +1,40 @@
+nav:
+  blog: Blog
+  notes: Notes
+  about: About
+  archive: Archive
+  home: Home
+  lang_switch: 中文
+
+recent:
+  title: Recent Writing
+  more: View Archive →
+
+featured:
+  title: Notable Publications
+
+notebook:
+  title: Tags
+
+about:
+  title: About Ode
+  description: >
+    The reference site feels not complex, but restrained.
+    Navigation like tab strips, body text like paper, module
+    boundaries clear, content before decoration.
+    Ode's first version walks in that direction, but leaves room to grow.
+
+blog:
+  title: Blog Articles
+  description: All posts, newest first.
+
+projects:
+  title: Highlighted Projects
+
+links:
+  title: Quick Links
+
+footer:
+  text: "Copyright 2024–2026 Ode."
+  served: "Served by Ode (Next.js) with site version"
+  source: "source code available"

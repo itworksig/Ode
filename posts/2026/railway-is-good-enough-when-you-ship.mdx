@@ -1,0 +1,43 @@
+---
+title: Railway Is Good Enough When You Ship
+date: 2026-04-03
+category: Infra
+readingTime: 5 min
+summary: For a personal blog, Railway's value is not novelty. It is that pushing a GitHub repo is enough to get the site online without inventing a platform project.
+eyebrow: Deployment
+featured: false
+---
+
+The app runs with standard Next.js scripts, so Railway can build it with Nixpacks and serve it without any platform-specific code.
+
+A small `railway.json` file clarifies the intent, but the deployment story stays boring on purpose. Boring is what you want for publishing.
+
+:::note
+If the design system is expressive and the infrastructure is dull, the priorities are in the right order.
+:::
+
+## The railway.json
+
+```json
+{
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "npm start",
+    "healthcheckPath": "/",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
+```
+
+## What Railway handles for you
+
+- Automatic HTTPS with a generated domain
+- Build caching via Nixpacks
+- Automatic redeploys on `git push`
+- Environment variable management in the dashboard
+
+:::warning
+Railway's free tier has usage limits. For a low-traffic personal blog it is plenty, but watch your build minutes if you redeploy frequently.
+:::
