@@ -17,12 +17,7 @@ notebook:
   title: Tags
 
 about:
-  title: About Ode
-  description: >
-    The reference site feels not complex, but restrained.
-    Navigation like tab strips, body text like paper, module
-    boundaries clear, content before decoration.
-    Ode's first version walks in that direction, but leaves room to grow.
+  title: About
 
 blog:
   title: Blog Articles
