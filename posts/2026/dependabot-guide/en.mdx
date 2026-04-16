@@ -1,0 +1,205 @@
+---
+title: "Dependabot — The Complete Command Reference"
+date: 2026-04-16
+category: DevOps
+eyebrow: GitHub Tips
+summary: Everything you need to know about Dependabot — setup, configuration, and every comment command you can leave on a PR to control its behaviour.
+lang: en
+tags: [dependabot, github, devops, security]
+---
+
+Dependabot keeps your dependencies up to date automatically. It scans your repository on a schedule and opens pull requests whenever a newer version of a package is available. This post covers setup and every comment command you can use to control it from a PR.
+
+## What Dependabot Does
+
+- Scans `package.json`, `requirements.txt`, `go.mod`, `Gemfile`, `Cargo.toml`, and many more
+- Opens PRs for outdated or vulnerable dependencies
+- Adds changelogs and release notes directly in the PR description
+- Groups updates to reduce PR noise (with grouping rules)
+- Alerts you to **security vulnerabilities** even without version bumps
+
+---
+
+## Setup — `.github/dependabot.yml`
+
+Create this file to enable Dependabot:
+
+```yaml
+version: 2
+updates:
+  # npm / Node.js
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"      # daily | weekly | monthly
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    reviewers:
+      - "your-github-username"
+    commit-message:
+      prefix: "fix"           # makes dependabot use fix: prefix
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+```
+
+:::tip
+Setting `commit-message.prefix: "fix"` makes Dependabot's commits follow the Conventional Commits format, so they appear under **Bug Fixes** in your auto-generated release notes.
+:::
+
+---
+
+## PR Comment Commands
+
+Once Dependabot has opened a PR, you can control it by leaving a comment that starts with `@dependabot`. GitHub processes the comment and acts accordingly — no manual work needed.
+
+### Rebasing & Updating
+
+```
+@dependabot rebase
+```
+
+Forces Dependabot to rebase the PR branch against the current base branch. Use this when merge conflicts appear or when CI was re-run on the base branch and the PR branch is stale.
+
+```
+@dependabot recreate
+```
+
+Closes the existing PR and opens a brand-new one. Useful when the PR has become too messy to rebase, or when you want a fresh diff after changing Dependabot configuration.
+
+---
+
+### Merging
+
+```
+@dependabot merge
+```
+
+Tells Dependabot to merge the PR once all status checks pass. Dependabot will wait for CI to go green, then merge automatically — no need to click the button yourself.
+
+:::note
+This only works if you have sufficient repository permissions and if auto-merge is enabled on the repository.
+:::
+
+---
+
+### Ignoring Versions
+
+These commands tell Dependabot to stop opening PRs for certain version ranges of a dependency.
+
+```
+@dependabot ignore this patch version
+```
+
+Ignores this exact patch bump (e.g. `1.2.3 → 1.2.4`) but will still open PRs for future minor and major updates.
+
+```
+@dependabot ignore this minor version
+```
+
+Ignores the entire minor version range (e.g. all `1.3.x` updates) but will still open PRs for major updates.
+
+```
+@dependabot ignore this dependency
+```
+
+Permanently ignores all future updates for this dependency. Dependabot will never open another PR for it. To undo this, edit the generated `dependabot.yml` entry or go to **Insights → Dependency graph → Dependabot** and re-enable it.
+
+:::warning
+`@dependabot ignore this dependency` affects **all** version updates, including security patches. Use with care.
+:::
+
+---
+
+### Other Commands
+
+```
+@dependabot squash and merge
+```
+
+Squashes all commits in the PR into one and merges. Keeps your history clean.
+
+```
+@dependabot cancel merge
+```
+
+Cancels a pending `@dependabot merge` or `@dependabot squash and merge` command before it executes.
+
+```
+@dependabot show <dependency-name> ignore conditions
+```
+
+Lists all currently active ignore rules for a specific dependency, so you know what you've previously silenced.
+
+```
+@dependabot open all prs
+```
+
+Re-opens all PRs that Dependabot previously closed (for example, if you had closed them manually).
+
+---
+
+## Useful Configuration Options
+
+### Grouping Updates
+
+Instead of one PR per package, group related updates together:
+
+```yaml
+groups:
+  dev-dependencies:
+    dependency-type: "development"
+  linting-tools:
+    patterns:
+      - "eslint*"
+      - "prettier*"
+```
+
+### Allowing Only Security Updates
+
+```yaml
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 0   # disable version update PRs
+```
+
+Then enable **Dependabot security updates** in repository settings — these are separate from version updates and fire immediately when a vulnerability is found.
+
+### Targeting Specific Versions
+
+```yaml
+allow:
+  - dependency-name: "next"
+    dependency-type: "production"
+ignore:
+  - dependency-name: "typescript"
+    versions: ["5.x"]
+```
+
+---
+
+## Quick Reference Card
+
+| Command | What it does |
+|---|---|
+| `@dependabot rebase` | Rebase the PR branch onto the current base |
+| `@dependabot recreate` | Close and re-open the PR from scratch |
+| `@dependabot merge` | Auto-merge once CI passes |
+| `@dependabot squash and merge` | Squash-merge once CI passes |
+| `@dependabot cancel merge` | Cancel a pending merge command |
+| `@dependabot ignore this patch version` | Skip this patch bump only |
+| `@dependabot ignore this minor version` | Skip this entire minor range |
+| `@dependabot ignore this dependency` | Never update this dependency again |
+| `@dependabot show <dep> ignore conditions` | List active ignore rules for a dep |
+| `@dependabot open all prs` | Re-open all previously closed PRs |

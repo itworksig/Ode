@@ -1,0 +1,215 @@
+---
+title: "Conventional Commits — 写出能自动生成 Changelog 的 commit"
+date: 2026-04-16
+category: DevOps
+eyebrow: Git 工作流
+summary: Conventional Commits 规范实用指南 — 一种结构化 commit 格式，让工具能自动生成 Release Notes、Changelog 以及语义化版本号。
+lang: zh
+tags: [git, conventional-commits, devops, github-actions]
+---
+
+Conventional Commits 是一套附加在 commit 信息上的轻量规范。核心思路：用结构化的前缀告诉人和工具这次提交是什么类型的变更，从而实现 Changelog、Release Notes 和语义化版本的自动化。
+
+## 格式
+
+```
+<类型>(<范围>): <描述>
+
+[可选正文]
+
+[可选脚注]
+```
+
+### 最简示例
+
+```
+fix: 修复移动端导航栏溢出问题
+```
+
+### 带范围
+
+```
+feat(auth): 添加 GitHub OAuth2 登录
+```
+
+### 完整示例
+
+```
+feat(api): 为 /posts 接口添加分页
+
+每页最多返回 20 篇文章。客户端通过 ?page=N 获取后续页面。
+
+Closes #142
+Co-Authored-By: Alice <alice@example.com>
+```
+
+---
+
+## 类型
+
+类型是除描述之外唯一必填的部分。以下是标准类型：
+
+| 类型 | 使用场景 | Release Notes 分组 |
+|---|---|---|
+| `feat` | 新功能或用户可见的行为变化 | **Features** |
+| `fix` | Bug 修复 | **Bug Fixes** |
+| `docs` | 仅文档变更 | （通常省略） |
+| `style` | 格式化、空白符 — 不改变逻辑 | （通常省略） |
+| `refactor` | 代码重构 — 无 Bug 修复也无新功能 | （通常省略） |
+| `perf` | 性能优化 | **Performance** |
+| `test` | 添加或修正测试 | （通常省略） |
+| `build` | 构建系统、依赖变更 | （通常省略） |
+| `ci` | CI 配置 | （通常省略） |
+| `chore` | 日常维护任务 | （通常省略） |
+| `revert` | 回滚之前的 commit | **Reverts** |
+
+:::tip
+规范中只要求 `feat` 和 `fix`，其他类型是约定俗成的，工具能识别，你也可以为项目定义自己的类型。
+:::
+
+---
+
+## 范围（Scope）
+
+范围是括号内的可选名词，描述本次变更影响的代码区域：
+
+```
+feat(search): 为博客添加全文搜索
+fix(toc): 修复中文标题的锚点链接
+feat(api): 添加速率限制
+fix(deps): 将 next 从 15.0.0 升级到 16.0.0
+```
+
+好的范围命名：
+- 组件名（`header`、`footer`、`sidebar`）
+- 模块名（`auth`、`api`、`db`）
+- 区域名（`config`、`deps`、`ci`）
+
+没有强制规定 — 在项目内保持一致即可。
+
+---
+
+## 破坏性变更（Breaking Changes）
+
+破坏性变更有两种标注方式：
+
+**1. 在类型/范围后加感叹号：**
+
+```
+feat!: 移除 /v1 API 端点
+fix(auth)!: token 有效期改为 1 小时而非 24 小时
+```
+
+**2. 在脚注中写 `BREAKING CHANGE:`：**
+
+```
+feat(api): 重新设计认证流程
+
+BREAKING CHANGE: Authorization 头格式已从 `Bearer <token>`
+改为 `Token <token>`，客户端需要更新。
+```
+
+两种方式都会在 Changelog 中产生 **Breaking Changes** 部分，并在语义化版本工具中触发 **major** 版本升级。
+
+---
+
+## 本博客的发布工作流如何使用它
+
+本仓库的 GitHub Actions 发布流水线读取自上次 tag 以来的 commit 标题并分类：
+
+```bash
+# commit: "fix(footer): 使 commit hash 成为可点击链接"
+# → 出现在 Bug Fixes 中：
+#   - footer: 使 commit hash 成为可点击链接 (4db55bb)
+
+# commit: "feat(search): 添加全文搜索弹窗"
+# → 出现在 Features 中：
+#   - search: 添加全文搜索弹窗 (a1b2c3d)
+```
+
+工作流去掉 `fix:` / `feat:` 前缀并将范围作为标签显示，生成如下 Release Notes：
+
+```markdown
+## Bug Fixes
+
+- footer: 使 commit hash 成为可点击链接 (4db55bb)
+- toc: slugify 支持中文标题 (dd083ba)
+
+## Features
+
+- 添加 GitHub Actions 发布流水线 (bd1c006)
+- search: 添加全文搜索弹窗 (a1b2c3d)
+```
+
+不符合已识别前缀的 commit 归入 **Other Changes**，不会污染主要分组。
+
+---
+
+## 实用规则
+
+**每个 commit 只做一件事。** 不要把 Bug 修复和新功能混在同一个 commit 里 — 类型不能同时是 `fix` 和 `feat`。
+
+**用祈使语气写描述。** 说这个 commit *做*什么，而不是*做了*什么：
+
+```
+# 好的写法
+fix: 处理会话中间件的空用户情况
+feat: 添加深色模式切换
+
+# 不好的写法
+fixed: 修复了空用户未处理的问题
+added dark mode
+```
+
+**描述应该能完成句子"这个 commit 将会……"**
+
+```
+feat(rss): 添加 JSONFeed 1.1 支持
+# → "这个 commit 将会添加 JSONFeed 1.1 支持"
+```
+
+**标题行保持在 72 个字符以内。** 更长的说明放在正文里。
+
+---
+
+## 配置 Commitlint（可选）
+
+在每次 commit 时自动检验格式：
+
+```bash
+npm install --save-dev @commitlint/cli @commitlint/config-conventional husky
+```
+
+`commitlint.config.js`：
+
+```javascript
+export default {
+  extends: ["@commitlint/config-conventional"],
+};
+```
+
+`.husky/commit-msg`：
+
+```bash
+#!/bin/sh
+npx commitlint --edit "$1"
+```
+
+配置后，每条 commit 消息在提交前都会自动验证，不符合规范的消息会被拒绝并给出提示。
+
+---
+
+## 快速参考
+
+```
+feat: 新功能
+fix: Bug 修复
+feat(范围): 特定区域的新功能
+fix(范围): 特定区域的 Bug 修复
+feat!: 破坏性新功能
+fix!: 破坏性 Bug 修复
+docs: 文档更新
+refactor: 代码重构
+perf: 性能优化
+chore: 日常维护
+```

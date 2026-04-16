@@ -1,0 +1,205 @@
+---
+title: "Dependabot — Полный справочник команд"
+date: 2026-04-16
+category: DevOps
+eyebrow: Советы по GitHub
+summary: Всё, что нужно знать о Dependabot — настройка, конфигурация и каждая команда в комментарии PR для управления его поведением.
+lang: ru
+tags: [dependabot, github, devops, security]
+---
+
+Dependabot автоматически поддерживает ваши зависимости в актуальном состоянии. Он сканирует репозиторий по расписанию и открывает pull request'ы при появлении новых версий пакетов. В этой статье описаны настройка и все команды для управления им из PR.
+
+## Что делает Dependabot
+
+- Сканирует `package.json`, `requirements.txt`, `go.mod`, `Gemfile`, `Cargo.toml` и многие другие форматы
+- Открывает PR для устаревших или уязвимых зависимостей
+- Добавляет changelog и примечания к выпускам прямо в описание PR
+- Группирует обновления для сокращения количества PR
+- Предупреждает об **уязвимостях безопасности** даже без обновления версии
+
+---
+
+## Настройка — `.github/dependabot.yml`
+
+Создайте этот файл для включения Dependabot:
+
+```yaml
+version: 2
+updates:
+  # npm / Node.js
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"      # daily | weekly | monthly
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    reviewers:
+      - "ваш-github-логин"
+    commit-message:
+      prefix: "fix"           # Dependabot будет использовать префикс fix:
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+```
+
+:::tip
+Настройка `commit-message.prefix: "fix"` заставляет Dependabot следовать формату Conventional Commits, и его коммиты автоматически попадают в раздел **Bug Fixes** автоматически генерируемых Release Notes.
+:::
+
+---
+
+## Команды в комментариях к PR
+
+После того как Dependabot открыл PR, вы можете управлять им, оставляя комментарий, начинающийся с `@dependabot`. GitHub обрабатывает комментарий и действует автоматически.
+
+### Перебазирование и обновление
+
+```
+@dependabot rebase
+```
+
+Принудительно перебазирует ветку PR на текущую базовую ветку. Используйте при появлении конфликтов слияния или когда ветка PR устарела после повторного запуска CI в базовой ветке.
+
+```
+@dependabot recreate
+```
+
+Закрывает существующий PR и открывает новый. Полезно, когда PR стал слишком запутанным для перебазирования, или когда вы хотите получить свежий diff после изменения конфигурации Dependabot.
+
+---
+
+### Слияние
+
+```
+@dependabot merge
+```
+
+Указывает Dependabot слить PR после прохождения всех проверок статуса. Dependabot дождётся зелёного CI и выполнит слияние автоматически — без необходимости нажимать кнопку вручную.
+
+:::note
+Это работает только при наличии достаточных прав в репозитории и включённом автослиянии.
+:::
+
+---
+
+### Игнорирование версий
+
+Эти команды указывают Dependabot прекратить открывать PR для определённых диапазонов версий зависимости.
+
+```
+@dependabot ignore this patch version
+```
+
+Игнорирует это конкретное обновление патча (например, `1.2.3 → 1.2.4`), но по-прежнему будет открывать PR для будущих minor и major обновлений.
+
+```
+@dependabot ignore this minor version
+```
+
+Игнорирует весь диапазон minor-версии (например, все обновления `1.3.x`), но по-прежнему будет открывать PR для major-обновлений.
+
+```
+@dependabot ignore this dependency
+```
+
+Навсегда игнорирует все будущие обновления этой зависимости. Чтобы отменить это, отредактируйте сгенерированную запись в `dependabot.yml` или зайдите в **Insights → Dependency graph → Dependabot** и включите её снова.
+
+:::warning
+`@dependabot ignore this dependency` влияет на **все** обновления версий, включая патчи безопасности. Используйте с осторожностью.
+:::
+
+---
+
+### Прочие команды
+
+```
+@dependabot squash and merge
+```
+
+Сжимает все коммиты PR в один и выполняет слияние. Сохраняет историю коммитов чистой.
+
+```
+@dependabot cancel merge
+```
+
+Отменяет ожидающую команду `@dependabot merge` или `@dependabot squash and merge` до её выполнения.
+
+```
+@dependabot show <имя-зависимости> ignore conditions
+```
+
+Выводит список всех активных правил игнорирования для конкретной зависимости.
+
+```
+@dependabot open all prs
+```
+
+Повторно открывает все PR, которые Dependabot ранее закрыл (например, если вы закрыли их вручную).
+
+---
+
+## Полезные параметры конфигурации
+
+### Группировка обновлений
+
+Вместо одного PR на каждый пакет — группируйте связанные обновления:
+
+```yaml
+groups:
+  dev-dependencies:
+    dependency-type: "development"
+  linting-tools:
+    patterns:
+      - "eslint*"
+      - "prettier*"
+```
+
+### Только обновления безопасности
+
+```yaml
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 0   # отключить PR с обновлениями версий
+```
+
+Затем включите **Dependabot security updates** в настройках репозитория — они срабатывают мгновенно при обнаружении уязвимости.
+
+### Указание конкретных версий
+
+```yaml
+allow:
+  - dependency-name: "next"
+    dependency-type: "production"
+ignore:
+  - dependency-name: "typescript"
+    versions: ["5.x"]
+```
+
+---
+
+## Краткий справочник
+
+| Команда | Действие |
+|---|---|
+| `@dependabot rebase` | Перебазировать ветку PR на базовую |
+| `@dependabot recreate` | Закрыть и создать PR заново |
+| `@dependabot merge` | Слить автоматически после CI |
+| `@dependabot squash and merge` | Сжать и слить после CI |
+| `@dependabot cancel merge` | Отменить ожидающее слияние |
+| `@dependabot ignore this patch version` | Пропустить только этот патч |
+| `@dependabot ignore this minor version` | Пропустить весь minor-диапазон |
+| `@dependabot ignore this dependency` | Навсегда игнорировать зависимость |
+| `@dependabot show <dep> ignore conditions` | Показать правила игнорирования |
+| `@dependabot open all prs` | Повторно открыть все закрытые PR |

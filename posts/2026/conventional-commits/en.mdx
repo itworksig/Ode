@@ -1,0 +1,216 @@
+---
+title: "Conventional Commits — Write Commits That Generate Changelogs"
+date: 2026-04-16
+category: DevOps
+eyebrow: Git Workflow
+summary: A practical guide to the Conventional Commits specification — the commit message format that lets tooling automatically generate release notes, version bumps, and changelogs.
+lang: en
+tags: [git, conventional-commits, devops, github-actions]
+---
+
+Conventional Commits is a lightweight specification on top of commit messages. The core idea: a structured prefix tells both humans and tools what kind of change a commit is, making it possible to automate changelogs, release notes, and semantic version bumps.
+
+## The Format
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+### Minimal example
+
+```
+fix: correct navbar overflow on mobile
+```
+
+### With scope
+
+```
+feat(auth): add OAuth2 login via GitHub
+```
+
+### Full example
+
+```
+feat(api): add pagination to /posts endpoint
+
+Returns up to 20 posts per page. Clients pass ?page=N
+to fetch subsequent pages.
+
+Closes #142
+Co-Authored-By: Alice <alice@example.com>
+```
+
+---
+
+## Types
+
+The type is the only required part beyond the description. These are the standard types:
+
+| Type | When to use | Release notes section |
+|---|---|---|
+| `feat` | New feature or user-visible behaviour | **Features** |
+| `fix` | Bug fix | **Bug Fixes** |
+| `docs` | Documentation only | (usually omitted) |
+| `style` | Formatting, whitespace — no logic change | (usually omitted) |
+| `refactor` | Code restructure — no bug fix, no new feature | (usually omitted) |
+| `perf` | Performance improvement | **Performance** |
+| `test` | Adding or correcting tests | (usually omitted) |
+| `build` | Build system, dependencies | (usually omitted) |
+| `ci` | CI configuration | (usually omitted) |
+| `chore` | Maintenance tasks | (usually omitted) |
+| `revert` | Reverts a previous commit | **Reverts** |
+
+:::tip
+Only `feat` and `fix` are required by the spec. The rest are conventions that tools understand but you can define your own types for internal use.
+:::
+
+---
+
+## Scope
+
+The scope is an optional noun in parentheses that describes the part of the codebase affected:
+
+```
+feat(search): add full-text search to blog
+fix(toc): anchor links broken for CJK headings
+feat(api): add rate limiting
+fix(deps): bump next from 15.0.0 to 16.0.0
+```
+
+Good scopes:
+- Component names (`header`, `footer`, `sidebar`)
+- Module names (`auth`, `api`, `db`)
+- File areas (`config`, `deps`, `ci`)
+
+There are no rules — be consistent within your project.
+
+---
+
+## Breaking Changes
+
+A breaking change is indicated in one of two ways:
+
+**1. Exclamation mark after the type/scope:**
+
+```
+feat!: remove /v1 API endpoints
+fix(auth)!: tokens now expire after 1 hour instead of 24
+```
+
+**2. Footer with `BREAKING CHANGE:`:**
+
+```
+feat(api): redesign authentication flow
+
+BREAKING CHANGE: The Authorization header format has changed
+from `Bearer <token>` to `Token <token>`. Clients must update.
+```
+
+Both approaches produce a **Breaking Changes** section in the changelog and trigger a **major** version bump in semantic versioning tools.
+
+---
+
+## How This Blog's Release Workflow Uses It
+
+The GitHub Actions release pipeline in this repository reads commit subjects since the last tag and classifies them:
+
+```bash
+# commit subject: "fix(footer): make commit hash a clickable link"
+# → appears under Bug Fixes as:
+#   - footer: make commit hash a clickable link (4db55bb)
+
+# commit subject: "feat(search): add full-text search modal"
+# → appears under Features as:
+#   - search: add full-text search modal (a1b2c3d)
+```
+
+The workflow strips the `fix:` / `feat:` prefix and formats the scope as a label, producing release notes that look like this:
+
+```markdown
+## Bug Fixes
+
+- footer: make commit hash a clickable link (4db55bb)
+- toc: slugify now Unicode-aware for CJK headings (dd083ba)
+
+## Features
+
+- add GitHub Actions release pipeline (bd1c006)
+- search: add full-text search modal (a1b2c3d)
+```
+
+Commits that don't use a recognised prefix go into **Other Changes** and don't pollute the main sections.
+
+---
+
+## Practical Rules
+
+**One logical change per commit.** Don't mix a bug fix and a new feature in the same commit — the type can't be both `fix` and `feat`.
+
+**Write the description in the imperative mood.** Say what the commit *does*, not what it *did*:
+
+```
+# Good
+fix: handle null user in session middleware
+feat: add dark mode toggle
+
+# Bad
+fixed: null user was not handled
+added dark mode
+```
+
+**The description should complete the sentence "This commit will…"**
+
+```
+feat(rss): add JSONFeed 1.1 support
+# → "This commit will add JSONFeed 1.1 support"
+```
+
+**Keep the subject line under 72 characters.** Longer descriptions go in the body.
+
+---
+
+## Setting Up Commitlint (Optional)
+
+To enforce the format automatically on every commit:
+
+```bash
+npm install --save-dev @commitlint/cli @commitlint/config-conventional husky
+```
+
+`commitlint.config.js`:
+
+```javascript
+export default {
+  extends: ["@commitlint/config-conventional"],
+};
+```
+
+`.husky/commit-msg`:
+
+```bash
+#!/bin/sh
+npx commitlint --edit "$1"
+```
+
+Now every commit message is validated before it lands. Non-conforming messages are rejected with a helpful error.
+
+---
+
+## Quick Reference
+
+```
+feat: new feature
+fix: bug fix
+feat(scope): new feature in a specific area
+fix(scope): bug fix in a specific area
+feat!: breaking new feature
+fix!: breaking bug fix
+docs: documentation update
+refactor: code restructure
+perf: performance improvement
+chore: maintenance
+```

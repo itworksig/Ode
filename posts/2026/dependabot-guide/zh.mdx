@@ -1,0 +1,205 @@
+---
+title: "Dependabot — 完整命令参考"
+date: 2026-04-16
+category: DevOps
+eyebrow: GitHub 技巧
+summary: Dependabot 从配置到使用的完整指南 — 包括 dependabot.yml 配置、每一条评论命令的用途，以及控制更新行为的实用技巧。
+lang: zh
+tags: [dependabot, github, devops, security]
+---
+
+Dependabot 自动帮你保持依赖最新。它按计划扫描仓库，每当有更新版本时就自动开启 Pull Request。本文涵盖配置方法和所有可在 PR 中使用的评论命令。
+
+## Dependabot 做什么
+
+- 扫描 `package.json`、`requirements.txt`、`go.mod`、`Gemfile`、`Cargo.toml` 等
+- 为过时或有漏洞的依赖开启 PR
+- 在 PR 描述中直接显示更新日志和发布说明
+- 支持分组更新，减少 PR 数量
+- 即使没有版本升级，也会对**安全漏洞**发出警报
+
+---
+
+## 配置 — `.github/dependabot.yml`
+
+创建此文件以启用 Dependabot：
+
+```yaml
+version: 2
+updates:
+  # npm / Node.js
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"      # daily | weekly | monthly
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    reviewers:
+      - "你的GitHub用户名"
+    commit-message:
+      prefix: "fix"           # 让 Dependabot 使用 fix: 前缀
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+```
+
+:::tip
+设置 `commit-message.prefix: "fix"` 可以让 Dependabot 的 commit 遵循 Conventional Commits 格式，这样它们会自动出现在自动生成的 Release Notes 的 **Bug Fixes** 部分。
+:::
+
+---
+
+## PR 评论命令
+
+Dependabot 开启 PR 后，你可以在 PR 评论中以 `@dependabot` 开头发出指令，GitHub 会自动执行，无需手动操作。
+
+### 变基与更新
+
+```
+@dependabot rebase
+```
+
+强制 Dependabot 将 PR 分支变基到当前基础分支。当出现合并冲突，或基础分支上的 CI 重新运行导致 PR 分支过时时使用。
+
+```
+@dependabot recreate
+```
+
+关闭现有 PR 并重新开一个全新的。当 PR 变得太乱无法变基，或者你修改了 Dependabot 配置后想看新的差异时使用。
+
+---
+
+### 合并
+
+```
+@dependabot merge
+```
+
+告诉 Dependabot 在所有状态检查通过后自动合并 PR。Dependabot 会等待 CI 变绿，然后自动合并 — 无需手动点击按钮。
+
+:::note
+这需要你有足够的仓库权限，且仓库已启用自动合并功能。
+:::
+
+---
+
+### 忽略版本
+
+这些命令告诉 Dependabot 停止为某个依赖的特定版本范围开启 PR。
+
+```
+@dependabot ignore this patch version
+```
+
+忽略此次 patch 升级（例如 `1.2.3 → 1.2.4`），但仍会为未来的 minor 和 major 更新开启 PR。
+
+```
+@dependabot ignore this minor version
+```
+
+忽略整个 minor 版本范围（例如所有 `1.3.x` 的更新），但仍会为 major 更新开启 PR。
+
+```
+@dependabot ignore this dependency
+```
+
+永久忽略该依赖的所有未来更新，Dependabot 不会再为其开启任何 PR。要撤销此设置，可编辑生成的 `dependabot.yml` 条目，或在 **Insights → Dependency graph → Dependabot** 中重新启用。
+
+:::warning
+`@dependabot ignore this dependency` 会影响**所有**版本更新，包括安全补丁，请谨慎使用。
+:::
+
+---
+
+### 其他命令
+
+```
+@dependabot squash and merge
+```
+
+将 PR 的所有 commit 压缩为一个再合并，保持提交历史整洁。
+
+```
+@dependabot cancel merge
+```
+
+在 `@dependabot merge` 或 `@dependabot squash and merge` 执行前取消它。
+
+```
+@dependabot show <依赖名称> ignore conditions
+```
+
+列出某个依赖当前所有生效的忽略规则，查看之前屏蔽了哪些更新。
+
+```
+@dependabot open all prs
+```
+
+重新开启之前（例如手动）关闭的所有 Dependabot PR。
+
+---
+
+## 实用配置选项
+
+### 分组更新
+
+将相关更新合并为一个 PR，而不是每个包单独一个：
+
+```yaml
+groups:
+  dev-dependencies:
+    dependency-type: "development"
+  linting-tools:
+    patterns:
+      - "eslint*"
+      - "prettier*"
+```
+
+### 只接收安全更新
+
+```yaml
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 0   # 禁用版本更新 PR
+```
+
+然后在仓库设置中启用 **Dependabot 安全更新** — 发现漏洞时立即触发，与版本更新独立运行。
+
+### 针对特定版本
+
+```yaml
+allow:
+  - dependency-name: "next"
+    dependency-type: "production"
+ignore:
+  - dependency-name: "typescript"
+    versions: ["5.x"]
+```
+
+---
+
+## 快速参考卡
+
+| 命令 | 作用 |
+|---|---|
+| `@dependabot rebase` | 将 PR 分支变基到当前基础分支 |
+| `@dependabot recreate` | 关闭并重新创建 PR |
+| `@dependabot merge` | CI 通过后自动合并 |
+| `@dependabot squash and merge` | CI 通过后压缩合并 |
+| `@dependabot cancel merge` | 取消待执行的合并命令 |
+| `@dependabot ignore this patch version` | 仅忽略此 patch 版本 |
+| `@dependabot ignore this minor version` | 忽略整个 minor 版本范围 |
+| `@dependabot ignore this dependency` | 永久忽略该依赖所有更新 |
+| `@dependabot show <dep> ignore conditions` | 列出该依赖的忽略规则 |
+| `@dependabot open all prs` | 重新开启所有已关闭的 PR |
