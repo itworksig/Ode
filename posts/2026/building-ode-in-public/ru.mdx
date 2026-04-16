@@ -3,7 +3,7 @@ title: "Создаём Ode публично"
 date: 2026-04-16
 category: Dev Log
 eyebrow: За кулисами
-summary: Полное руководство по Ode — что это такое, как работает, как писать посты и публиковать их на Cloudflare Pages, Railway или GitHub Pages.
+summary: Полное руководство по Ode — что это такое, как работает, как писать посты и публиковать их на Cloudflare Workers, Railway или GitHub Pages.
 lang: ru
 tags: [ode, nextjs, deployment, cloudflare, railway, github-pages]
 ---
@@ -175,25 +175,45 @@ npm run build
 
 ---
 
-### Cloudflare Pages (Рекомендуется)
+### Cloudflare Workers (Рекомендуется)
+
+Cloudflare Workers раздаёт статические файлы через глобальную сеть CDN.
 
 **Вариант А — Прямая загрузка:**
 
-1. Откройте [pages.cloudflare.com](https://pages.cloudflare.com)
-2. Новый проект → **Direct Upload**
+1. Откройте [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages**
+2. Новое приложение → **Pages** → **Direct Upload**
 3. Перетащите папку `out/` в зону загрузки
+4. Сайт будет доступен на `*.pages.dev` через несколько секунд
 
-**Вариант Б — Интеграция с Git:**
+**Вариант Б — Интеграция с Git (автоматический деплой при push):**
 
-Настройки сборки:
+Добавьте `wrangler.toml` в корень проекта:
+
+```toml
+name = "ode"
+compatibility_date = "2025-01-01"
+
+[assets]
+directory = "./out"
 ```
-Команда сборки:   npm run build
-Выходная директория: out
-Версия Node.js: 20
-```
+
+Затем подключите репозиторий в панели Cloudflare:
+
+1. **Workers & Pages** → **Создать** → **Подключить к Git**
+2. Выберите репозиторий
+3. Настройте параметры сборки:
+
+| Параметр | Значение |
+|---|---|
+| Команда сборки | `npm run build` |
+| Команда деплоя | `npx wrangler deploy` |
+| Корневая директория | `/` |
+
+Каждый `git push` в основную ветку запускает автоматическую сборку и деплой. Cloudflare выполняет `npm run build`, затем `npx wrangler deploy` читает `wrangler.toml` и публикует содержимое `out/` как статические ресурсы.
 
 :::tip
-Бесплатный тариф Cloudflare Pages включает 500 сборок в месяц и неограниченную пропускную способность.
+Бесплатный тариф Cloudflare Workers включает 100 000 запросов в день и глобальную CDN-сеть. Для личного блога этого практически неограниченно.
 :::
 
 ---

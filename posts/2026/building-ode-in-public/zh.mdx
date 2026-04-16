@@ -3,7 +3,7 @@ title: "公开构建 Ode"
 date: 2026-04-16
 category: Dev Log
 eyebrow: 幕后
-summary: Ode 完整指南 —— 它是什么、如何工作、如何撰写和管理博文，以及如何部署到 Cloudflare Pages、Railway 或 GitHub Pages。
+summary: Ode 完整指南 —— 它是什么、如何工作、如何撰写和管理博文，以及如何部署到 Cloudflare Workers、Railway 或 GitHub Pages。
 lang: zh
 tags: [ode, nextjs, deployment, cloudflare, railway, github-pages]
 ---
@@ -230,34 +230,45 @@ npm run build
 
 ---
 
-### Cloudflare Pages（推荐）
+### Cloudflare Workers（推荐）
 
-Cloudflare Pages 免费、快速，并有全球 CDN 分发。两种部署方式：
+Cloudflare Workers 通过全球 CDN 提供静态资源服务。两种部署方式：
 
 **方式 A — 直接上传（无需 Git）：**
 
-1. 访问 [pages.cloudflare.com](https://pages.cloudflare.com)
-2. 新建项目 → **Direct Upload**
+1. 访问 [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages**
+2. 新建应用 → **Pages** → **Direct Upload**
 3. 将 `out/` 文件夹拖入上传区域
 4. 数秒内网站即可在 `*.pages.dev` 上线
 
 **方式 B — Git 集成（推送后自动部署）：**
 
-1. 将你的 Ode 仓库推送到 GitHub 或 GitLab
-2. Cloudflare Pages → **新建项目** → **连接到 Git**
-3. 选择你的仓库
-4. 设置构建配置：
+首先，在项目根目录添加 `wrangler.toml`：
 
-```
-构建命令：   npm run build
-输出目录：  out
-Node.js 版本：20
+```toml
+name = "ode"
+compatibility_date = "2025-01-01"
+
+[assets]
+directory = "./out"
 ```
 
-每次向主分支 `git push` 都会触发自动构建和部署。
+然后在 Cloudflare 后台连接仓库：
+
+1. **Workers & Pages** → **创建** → **连接到 Git**
+2. 选择你的仓库
+3. 设置构建配置：
+
+| 设置项 | 值 |
+|---|---|
+| 构建命令 | `npm run build` |
+| 部署命令 | `npx wrangler deploy` |
+| 根目录 | `/` |
+
+每次向主分支 `git push` 都会触发自动构建和部署。Cloudflare 运行 `npm run build`，然后 `npx wrangler deploy` 读取 `wrangler.toml`，将 `out/` 目录作为静态资源发布。
 
 :::tip
-Cloudflare Pages 免费套餐包含每月 500 次构建和无限带宽。对于个人博客来说实际上是无限的。
+Cloudflare Workers 免费套餐每天包含 100,000 次请求和全球 CDN 分发。对于个人博客来说实际上是无限的。
 :::
 
 ---

@@ -3,7 +3,7 @@ title: "Building Ode in Public"
 date: 2026-04-16
 category: Dev Log
 eyebrow: Behind the scenes
-summary: A complete guide to Ode — what it is, how it works, how to write and manage posts, and how to deploy it to Cloudflare Pages, Railway, or GitHub Pages.
+summary: A complete guide to Ode — what it is, how it works, how to write and manage posts, and how to deploy it to Cloudflare Workers, Railway, or GitHub Pages.
 featured: true
 lang: en
 tags: [ode, nextjs, deployment, cloudflare, railway, github-pages]
@@ -242,34 +242,45 @@ The `out/` directory contains everything needed to serve the site. RSS feed (`rs
 
 ---
 
-### Cloudflare Pages (Recommended)
+### Cloudflare Workers (Recommended)
 
-Cloudflare Pages is free, fast, and has global CDN distribution. Two ways to deploy:
+Cloudflare Workers serves static assets globally via its CDN. Two ways to deploy:
 
 **Option A — Direct Upload (no Git required):**
 
-1. Go to [pages.cloudflare.com](https://pages.cloudflare.com)
-2. Create a new project → **Direct Upload**
+1. Go to [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages**
+2. Create a new application → **Pages** → **Direct Upload**
 3. Drag the `out/` folder into the upload area
 4. Your site is live at `*.pages.dev` within seconds
 
 **Option B — Git integration (auto-deploy on push):**
 
-1. Push your Ode repo to GitHub or GitLab
-2. Cloudflare Pages → **New project** → **Connect to Git**
-3. Select your repository
-4. Set the build configuration:
+First, add a `wrangler.toml` to the project root:
 
-```
-Build command:   npm run build
-Output directory: out
-Node.js version: 20
+```toml
+name = "ode"
+compatibility_date = "2025-01-01"
+
+[assets]
+directory = "./out"
 ```
 
-Every `git push` to the main branch triggers an automatic build and deploy. Preview URLs are created for pull requests.
+Then connect your repo in the Cloudflare dashboard:
+
+1. **Workers & Pages** → **Create** → **Connect to Git**
+2. Select your repository
+3. Set the build configuration:
+
+| Setting | Value |
+|---|---|
+| Build command | `npm run build` |
+| Deploy command | `npx wrangler deploy` |
+| Root directory | `/` |
+
+Every `git push` to the main branch triggers an automatic build and deploy. Cloudflare runs `npm run build`, then `npx wrangler deploy` reads `wrangler.toml` and publishes the `out/` directory as static assets.
 
 :::tip
-Cloudflare Pages includes 500 builds/month and unlimited bandwidth on the free tier. For a personal blog this is effectively unlimited.
+Cloudflare Workers includes 100,000 requests/day on the free tier and global CDN distribution. For a personal blog this is effectively unlimited.
 :::
 
 ---

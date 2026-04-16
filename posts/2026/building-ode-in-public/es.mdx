@@ -3,7 +3,7 @@ title: "Construyendo Ode en público"
 date: 2026-04-16
 category: Dev Log
 eyebrow: Entre bastidores
-summary: Una guía completa de Ode — qué es, cómo funciona, cómo escribir y gestionar entradas, y cómo desplegarlo en Cloudflare Pages, Railway o GitHub Pages.
+summary: Una guía completa de Ode — qué es, cómo funciona, cómo escribir y gestionar entradas, y cómo desplegarlo en Cloudflare Workers, Railway o GitHub Pages.
 lang: es
 tags: [ode, nextjs, deployment, cloudflare, railway, github-pages]
 ---
@@ -177,25 +177,45 @@ npm run build
 
 ---
 
-### Cloudflare Pages (Recomendado)
+### Cloudflare Workers (Recomendado)
+
+Cloudflare Workers sirve archivos estáticos a través de su CDN global.
 
 **Opción A — Carga directa:**
 
-1. Ve a [pages.cloudflare.com](https://pages.cloudflare.com)
-2. Nuevo proyecto → **Direct Upload**
+1. Ve a [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages**
+2. Nueva aplicación → **Pages** → **Direct Upload**
 3. Arrastra la carpeta `out/` al área de carga
+4. Tu sitio estará en vivo en `*.pages.dev` en segundos
 
-**Opción B — Integración con Git:**
+**Opción B — Integración con Git (despliegue automático al hacer push):**
 
-Configuración de compilación:
+Primero, añade `wrangler.toml` a la raíz del proyecto:
+
+```toml
+name = "ode"
+compatibility_date = "2025-01-01"
+
+[assets]
+directory = "./out"
 ```
-Comando de compilación:  npm run build
-Directorio de salida:    out
-Versión de Node.js:      20
-```
+
+Luego conecta tu repositorio en el panel de Cloudflare:
+
+1. **Workers & Pages** → **Crear** → **Conectar a Git**
+2. Selecciona tu repositorio
+3. Configura los parámetros de compilación:
+
+| Parámetro | Valor |
+|---|---|
+| Comando de compilación | `npm run build` |
+| Comando de despliegue | `npx wrangler deploy` |
+| Directorio raíz | `/` |
+
+Cada `git push` a la rama principal dispara una compilación y despliegue automáticos. Cloudflare ejecuta `npm run build`, luego `npx wrangler deploy` lee `wrangler.toml` y publica el directorio `out/` como activos estáticos.
 
 :::tip
-El plan gratuito de Cloudflare Pages incluye 500 compilaciones al mes y ancho de banda ilimitado. Para un blog personal es efectivamente ilimitado.
+El plan gratuito de Cloudflare Workers incluye 100.000 solicitudes al día y distribución CDN global. Para un blog personal es efectivamente ilimitado.
 :::
 
 ---

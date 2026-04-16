@@ -3,7 +3,7 @@ title: "بناء Ode في العلن"
 date: 2026-04-16
 category: Dev Log
 eyebrow: خلف الكواليس
-summary: دليل شامل لـ Ode — ما هو، وكيف يعمل، وكيفية كتابة المقالات وإدارتها، ونشرها على Cloudflare Pages أو Railway أو GitHub Pages.
+summary: دليل شامل لـ Ode — ما هو، وكيف يعمل، وكيفية كتابة المقالات وإدارتها، ونشرها على Cloudflare Workers أو Railway أو GitHub Pages.
 lang: ar
 tags: [ode, nextjs, deployment, cloudflare, railway, github-pages]
 ---
@@ -191,30 +191,45 @@ npm run build
 
 ---
 
-### Cloudflare Pages (مُوصَى به)
+### Cloudflare Workers (مُوصَى به)
+
+يقدّم Cloudflare Workers الملفات الثابتة عبر شبكة CDN العالمية.
 
 **الخيار أ — رفع مباشر:**
 
-1. اذهب إلى [pages.cloudflare.com](https://pages.cloudflare.com)
-2. مشروع جديد ← **Direct Upload**
+1. اذهب إلى [dash.cloudflare.com](https://dash.cloudflare.com) ← **Workers & Pages**
+2. تطبيق جديد ← **Pages** ← **Direct Upload**
 3. اسحب مجلد `out/` إلى منطقة الرفع
 4. موقعك يعمل على `*.pages.dev` في ثوانٍ
 
 **الخيار ب — تكامل Git (نشر تلقائي عند الدفع):**
 
-1. ادفع مستودع Ode إلى GitHub أو GitLab
-2. Cloudflare Pages → **مشروع جديد** → **ربط بـ Git**
-3. اختر مستودعك
-4. اضبط إعدادات البناء:
+أولاً، أضف `wrangler.toml` إلى جذر المشروع:
 
+```toml
+name = "ode"
+compatibility_date = "2025-01-01"
+
+[assets]
+directory = "./out"
 ```
-أمر البناء:        npm run build
-مجلد الإخراج:     out
-إصدار Node.js:    20
-```
+
+ثم اربط مستودعك في لوحة تحكم Cloudflare:
+
+1. **Workers & Pages** ← **إنشاء** ← **ربط بـ Git**
+2. اختر مستودعك
+3. اضبط إعدادات البناء:
+
+| الإعداد | القيمة |
+|---|---|
+| أمر البناء | `npm run build` |
+| أمر النشر | `npx wrangler deploy` |
+| المجلد الجذر | `/` |
+
+كل `git push` إلى الفرع الرئيسي يُشغّل عملية بناء ونشر تلقائية. يُشغّل Cloudflare أمر `npm run build`، ثم يقرأ `npx wrangler deploy` ملف `wrangler.toml` وينشر محتوى مجلد `out/` كملفات ثابتة.
 
 :::tip
-تتضمن الخطة المجانية من Cloudflare Pages 500 عملية بناء شهرياً وعرض نطاق غير محدود. بالنسبة لمدونة شخصية هذا لا نهاية له فعلياً.
+تتضمن الخطة المجانية من Cloudflare Workers 100,000 طلب يومياً وتوزيع CDN عالمي. بالنسبة لمدونة شخصية هذا لا نهاية له فعلياً.
 :::
 
 ---
