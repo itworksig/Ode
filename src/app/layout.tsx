@@ -3,17 +3,31 @@ import "@fontsource/iosevka-aile/400.css";
 import "@fontsource/iosevka-aile/700.css";
 import "@fontsource-variable/schibsted-grotesk";
 import "@fontsource/podkova/700.css";
+import "katex/dist/katex.min.css";
 import "./globals.css";
+import { getSiteConfig } from "@/lib/config";
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://ode.up.railway.app"),
-  title: {
-    default: "Ode",
-    template: "%s | Ode",
-  },
-  description:
-    "Ode is a warm-toned editorial blog scaffolded for Railway deployment.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const cfg = getSiteConfig();
+  let metadataBase: URL;
+  try {
+    metadataBase = new URL(cfg.site.url);
+  } catch {
+    metadataBase = new URL("http://localhost:3000");
+  }
+  return {
+    metadataBase,
+    title: {
+      default: cfg.site.name,
+      template: `%s | ${cfg.site.name}`,
+    },
+    description: cfg.site.description || cfg.site.subtitle,
+    icons: {
+      icon: "/favicon.svg",
+      shortcut: "/favicon.svg",
+    },
+  };
+}
 
 export default function RootLayout({
   children,

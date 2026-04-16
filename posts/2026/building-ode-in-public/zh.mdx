@@ -1,0 +1,367 @@
+---
+title: "公开构建 Ode"
+date: 2026-04-16
+category: Dev Log
+eyebrow: 幕后
+summary: Ode 完整指南 —— 它是什么、如何工作、如何撰写和管理博文，以及如何部署到 Cloudflare Pages、Railway 或 GitHub Pages。
+lang: zh
+tags: [ode, nextjs, deployment, cloudflare, railway, github-pages]
+---
+
+Ode 是基于 Next.js 16 App Router 构建的个人发布系统。它围绕一个核心前提而设计：你的内容是 Git 仓库中的纯文本文件，网站是可以在任何地方运行的静态 HTML 导出。
+
+这篇文章既是文档，也是一份实地报告。涵盖从架构到部署，再到日常写作工作流的全部内容。
+
+## Ode 是什么
+
+Ode 不是带有仪表板的 CMS，没有管理面板，没有数据库，没有登录页面。相反：
+
+- 博文是存储在 `posts/YYYY/slug/` 文件夹中的 **MDX 文件**
+- 配置是项目根目录下的单一 **`config.ini`** 文件
+- 整个网站通过 `npm run build` 编译为**静态 HTML**
+- 输出目录（`out/`）可以上传到任何静态托管提供商
+
+技术栈刻意保持精简：
+
+| 层级 | 技术 |
+|---|---|
+| 框架 | Next.js 16 App Router |
+| 内容 | MDX via `next-mdx-remote` |
+| 语法高亮 | `rehype-highlight`（Gruvbox 深色主题） |
+| 数学公式 | KaTeX via `remark-math` + `rehype-katex` |
+| 图表 | Mermaid（客户端渲染） |
+| 样式 | 手写 CSS，暖纸色调色板 |
+| 字体 | Iosevka Aile（等宽）、Schibsted Grotesk（正文）、Podkova（标题） |
+| 部署 | 静态导出 — 任何 CDN 或文件托管 |
+
+## 项目结构
+
+```
+Ode/
+├── config.ini              # 全站设置
+├── posts/
+│   └── 2026/
+│       └── my-post/
+│           ├── en.mdx      # 默认语言（英文）
+│           ├── zh.mdx      # 中文翻译
+│           └── ar.mdx      # 阿拉伯语翻译
+├── public/                 # 静态资源（图片、favicon）
+├── src/
+│   ├── app/                # Next.js App Router 页面和路由
+│   ├── components/         # React 组件
+│   └── lib/                # posts.ts、config.ts、i18n.ts 等
+├── locales/
+│   ├── en.yaml             # UI 字符串（英文）
+│   └── zh.yaml             # UI 字符串（中文）
+└── scripts/
+    └── post.mjs            # 交互式博文管理工具
+```
+
+## 撰写博文
+
+### Frontmatter
+
+每篇博文以 YAML frontmatter 块开始：
+
+```yaml
+---
+title: "我的博文标题"
+date: 2026-04-16
+category: Dev Log
+eyebrow: 标题上方的可选标签
+summary: 在列表和 meta 标签中显示的一句话描述。
+featured: false
+lang: zh
+tags: [标签一, 标签二]
+---
+```
+
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| `title` | ✓ | 博文标题 |
+| `date` | ✓ | 发布日期（YYYY-MM-DD） |
+| `lang` | ✓ | 语言代码（`en`、`zh`、`ar`、`ru` 等） |
+| `category` | — | 在分类页面对博文分组 |
+| `summary` | — | 显示在列表和 `<meta description>` 中 |
+| `eyebrow` | — | 标题上方渲染的小标签 |
+| `featured` | — | `true` 表示显示在首页精选区块 |
+| `tags` | — | 标签数组 |
+| `readingTime` | — | 覆盖自动计算的阅读时长 |
+
+### MDX 功能
+
+Ode 支持完整的 MDX 功能集。除标准 Markdown 外：
+
+**提示框：**
+
+```
+:::note
+这是一条备注。
+:::
+
+:::warning
+注意。
+:::
+
+:::tip
+有用的提示。
+:::
+
+:::danger
+危险操作前方。
+:::
+
+:::stale 2025-01-01
+此部分内容可能已过时。
+:::
+```
+
+**数学公式（KaTeX）：**
+
+行内：`$E = mc^2$`
+
+块级：
+```
+$$
+\int_{-\infty}^{\infty} e^{-x^2}\, dx = \sqrt{\pi}
+$$
+```
+
+**图表（Mermaid）：**
+
+````
+```mermaid
+graph LR
+  A[写作] --> B[构建] --> C[部署]
+```
+````
+
+**图片：**
+
+将图片放入 `public/`，然后在 MDX 中引用：
+
+```mdx
+![替代文字](/images/my-photo.jpg)
+```
+
+### 多语言博文
+
+每篇博文存放在一个文件夹中。添加语言文件即可翻译：
+
+```
+posts/2026/my-post/
+├── en.mdx   ← 默认，URL：/en/blog/2026/my-post
+├── zh.mdx   ← URL：/en/blog/2026/my-post/zh
+├── ru.mdx   ← URL：/en/blog/2026/my-post/ru
+└── ar.mdx   ← URL：/en/blog/2026/my-post/ar
+```
+
+翻译横幅会自动出现在每篇博文顶部，链接到所有可用语言。从右到左的语言（阿拉伯语、希伯来语、波斯语、乌尔都语）会被自动检测，文章以 `dir="rtl"` 渲染。
+
+## 用 `npm run post` 管理博文
+
+Ode 自带交互式命令行工具：
+
+```bash
+npm run post
+```
+
+```
+════════════════════════════════════════════
+  Ode 博文管理
+════════════════════════════════════════════
+
+  1. 新建博文
+  2. 删除博文
+  3. 列出所有博文
+  4. 退出
+```
+
+**新建博文** — 工具会询问标题、slug、日期、分类、摘要、标签以及是否为精选。它会创建带有正确 frontmatter 的 `posts/YYYY/slug/en.mdx`。
+
+**添加翻译** — 运行 `npm run post`，选择「新建博文」，对「这是某篇文章的译文？」回答是，从列表中选择原文，输入语言代码。工具会自动读取原文的日期和分类，并创建 `posts/YYYY/slug/LANG.mdx`。
+
+**删除博文** — 工具按语言分组列出所有博文。选择基于文件夹的博文会删除整个文件夹及其所有翻译。
+
+支持的语言代码包括所有 140+ 种 MediaWiki 语言代码：`zh`、`ru`、`es`、`ar`、`ja`、`fr`、`de`、`ko`、`hi`、`pt` 等。
+
+## 配置
+
+编辑 `config.ini` 无需触碰任何代码即可自定义网站：
+
+```ini
+[site]
+name     = Ian
+brand    = Ian
+locale   = en
+subtitle = GNU & Linux | 开源 | 渗透测试
+url      = https://yoursite.com
+description = 你的网站描述。
+
+[recent]
+limit = 7
+
+[featured]
+enabled = true
+
+[links]
+1 = GitHub   | https://github.com/you
+2 = RSS Feed | /rss.xml
+
+[disqus]
+shortname =
+
+[footer]
+github = https://github.com/you/ode
+```
+
+## 部署 Ode
+
+Ode 编译为完全静态的网站。输出是一个包含 HTML、CSS 和 JS 文件的文件夹，可在任何 Web 服务器或 CDN 上运行，零服务端依赖。
+
+### 构建静态输出
+
+```bash
+npm run build
+# 输出 → out/（全新站点约 20 MB）
+```
+
+`out/` 目录包含服务网站所需的一切。RSS 订阅（`rss.xml`）和 JSONFeed（`feed.json`）已包含其中。
+
+---
+
+### Cloudflare Pages（推荐）
+
+Cloudflare Pages 免费、快速，并有全球 CDN 分发。两种部署方式：
+
+**方式 A — 直接上传（无需 Git）：**
+
+1. 访问 [pages.cloudflare.com](https://pages.cloudflare.com)
+2. 新建项目 → **Direct Upload**
+3. 将 `out/` 文件夹拖入上传区域
+4. 数秒内网站即可在 `*.pages.dev` 上线
+
+**方式 B — Git 集成（推送后自动部署）：**
+
+1. 将你的 Ode 仓库推送到 GitHub 或 GitLab
+2. Cloudflare Pages → **新建项目** → **连接到 Git**
+3. 选择你的仓库
+4. 设置构建配置：
+
+```
+构建命令：   npm run build
+输出目录：  out
+Node.js 版本：20
+```
+
+每次向主分支 `git push` 都会触发自动构建和部署。
+
+:::tip
+Cloudflare Pages 免费套餐包含每月 500 次构建和无限带宽。对于个人博客来说实际上是无限的。
+:::
+
+---
+
+### Railway
+
+Railway 运行 Next.js 生产服务器，这意味着网站是服务端渲染而非纯静态。如果你后续要添加服务端功能，这很有用。
+
+1. 在 [railway.app](https://railway.app) 新建项目
+2. 连接你的 GitHub 仓库
+3. Railway 自动检测 Next.js，将启动命令设为 `npm run start`
+4. Railway 分配 `.up.railway.app` 域名；在设置中添加自定义域名
+
+:::note
+部署到 Railway 时，请注释掉 `next.config.ts` 中的 `output: "export"` — Railway 运行的是实时 Node.js 服务器，而非静态文件。
+:::
+
+---
+
+### GitHub Pages
+
+GitHub Pages 直接从仓库分支提供静态文件。
+
+**使用 GitHub Actions 配置：**
+
+创建 `.github/workflows/deploy.yml`：
+
+```yaml
+name: 部署到 GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out/
+      - uses: actions/deploy-pages@v4
+```
+
+然后进入仓库 **Settings → Pages → Source → GitHub Actions**。
+
+:::warning
+GitHub Pages 免费套餐仅支持公开仓库。私有仓库需要 GitHub Pro 或使用其他托管平台。
+:::
+
+---
+
+### Netlify
+
+1. 将 `out/` 文件夹拖到 [app.netlify.com/drop](https://app.netlify.com/drop)，或
+2. 连接你的 Git 仓库并设置：
+   - 构建命令：`npm run build`
+   - 发布目录：`out`
+
+---
+
+### VPS / 自托管
+
+将 `out/` 目录复制到你的服务器，用 Nginx 或 Caddy 提供服务：
+
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+    root /var/www/ode/out;
+    index index.html;
+    location / {
+        try_files $uri $uri/ $uri.html =404;
+    }
+}
+```
+
+## 订阅源
+
+Ode 在构建时生成两种机器可读的订阅源：
+
+| 格式 | URL | 用途 |
+|---|---|---|
+| RSS 2.0 | `/rss.xml` | 订阅阅读器（Feedly、NetNewsWire 等） |
+| JSONFeed 1.1 | `/feed.json` | 现代订阅阅读器、脚本 |
+
+两种订阅源都包含在 `out/` 目录中，在所有托管平台上均可使用。
+
+## 总结
+
+Ode 刻意保持精简。目标是一个易于从头到尾理解、易于在不同主机间迁移、经久耐用的网站。纯文本输入，静态 HTML 输出。
+
+```
+写 MDX → git push → npm run build → 上传 out/
+```
+
+这就是整个流程。

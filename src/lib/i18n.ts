@@ -52,3 +52,14 @@ export function getMessages(locale: Locale): Messages {
 export function otherLocale(locale: Locale): Locale {
   return locale === "en" ? "zh" : "en";
 }
+
+// ── RTL detection ─────────────────────────────────────────
+
+const RTL_LANGS = new Set([
+  "ar", "arc", "dv", "fa", "ha", "he", "khw", "ks",
+  "ku", "ps", "ur", "yi",
+]);
+
+export function isRtl(lang: string): boolean {
+  return RTL_LANGS.has(lang.toLowerCase().split("-")[0]);
+}

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <rect width="800" height="400" fill="#1d2021"/>
+  <rect x="0" y="0" width="800" height="5" fill="#9e0146"/>
+
+  <!-- Grid lines -->
+  <line x1="0" y1="100" x2="800" y2="100" stroke="#3c3836" stroke-width="1"/>
+  <line x1="0" y1="200" x2="800" y2="200" stroke="#3c3836" stroke-width="1"/>
+  <line x1="0" y1="300" x2="800" y2="300" stroke="#3c3836" stroke-width="1"/>
+  <line x1="200" y1="0" x2="200" y2="400" stroke="#3c3836" stroke-width="1"/>
+  <line x1="400" y1="0" x2="400" y2="400" stroke="#3c3836" stroke-width="1"/>
+  <line x1="600" y1="0" x2="600" y2="400" stroke="#3c3836" stroke-width="1"/>
+
+  <!-- Sine wave -->
+  <polyline
+    points="0,200 25,174 50,152 75,138 100,133 125,138 150,152 175,174 200,200 225,226 250,248 275,262 300,267 325,262 350,248 375,226 400,200 425,174 450,152 475,138 500,133 525,138 550,152 575,174 600,200 625,226 650,248 675,262 700,267 725,262 750,248 775,226 800,200"
+    fill="none" stroke="#b8bb26" stroke-width="2.5"/>
+
+  <!-- Cosine wave -->
+  <polyline
+    points="0,133 25,138 50,152 75,174 100,200 125,226 150,248 175,262 200,267 225,262 250,248 275,226 300,200 325,174 350,152 375,138 400,133 425,138 450,152 475,174 500,200 525,226 550,248 575,262 600,267 625,262 650,248 675,226 700,200 725,174 750,152 775,138 800,133"
+    fill="none" stroke="#83a598" stroke-width="2.5"/>
+
+  <!-- Labels -->
+  <text x="30" y="35" font-family="monospace" font-size="13" fill="#928374">y = sin(x)</text>
+  <circle cx="18" cy="31" r="5" fill="#b8bb26"/>
+  <text x="30" y="58" font-family="monospace" font-size="13" fill="#928374">y = cos(x)</text>
+  <circle cx="18" cy="54" r="5" fill="#83a598"/>
+
+  <!-- Center label -->
+  <text x="400" y="385" font-family="monospace" font-size="12" fill="#665c54" text-anchor="middle">demo-image.svg — place your images in public/images/</text>
+</svg>

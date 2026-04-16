@@ -5,11 +5,11 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Toc from "@/components/Toc";
 import ShareButton from "@/components/ShareButton";
-import SponsorButton from "@/components/SponsorButton";
 import TranslationBanner from "@/components/TranslationBanner";
+import SponsorButton from "@/components/SponsorButton";
 import DisqusComments from "@/components/DisqusComments";
 import CodeBlock from "@/components/mdx/CodeBlock";
-import { getAllPosts, getPostBySlug, getAdjacentPosts, getTranslations, toSlug } from "@/lib/posts";
+import { getAllPosts, getPostBySlug, getTranslations, getAvailableLangs, toSlug } from "@/lib/posts";
 import { extractToc } from "@/lib/toc";
 import { getMessages, isValidLocale, isRtl, locales, type Locale } from "@/lib/i18n";
 import { getSiteConfig } from "@/lib/config";
@@ -25,18 +25,22 @@ import { Note, Info, Warning, Danger, Tip, Stale } from "@/components/mdx/Admoni
 import { MdxImage } from "@/components/mdx/MdxImage";
 
 type PageProps = {
-  params: Promise<{ locale: string; year: string; slug: string }>;
+  params: Promise<{ locale: string; year: string; slug: string; lang: string }>;
 };
 
 export function generateStaticParams() {
   return locales.flatMap((locale) =>
-    getAllPosts().map((post) => ({ locale, year: post.year, slug: post.slug }))
+    getAllPosts().flatMap((post) =>
+      getAvailableLangs(post.year, post.slug)
+        .filter((l) => l !== "en")
+        .map((lang) => ({ locale, year: post.year, slug: post.slug, lang }))
+    )
   );
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { locale, year, slug } = await params;
-  const post = getPostBySlug(year, slug);
+  const { locale, year, slug, lang } = await params;
+  const post = getPostBySlug(year, slug, lang);
   if (!post) return { title: "Not Found" };
   const { site } = getSiteConfig();
   return {
@@ -45,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: post.title,
       description: post.summary,
-      url: `${site.url}/${locale}/blog/${year}/${slug}`,
+      url: `${site.url}/${locale}/blog/${year}/${slug}/${lang}`,
     },
     twitter: {
       card: "summary_large_image",
@@ -71,17 +75,16 @@ const mdxOptions = {
   rehypePlugins: [rehypeSlug, rehypeHighlight, rehypeKatex] as never[],
 };
 
-export default async function LocalePostPage({ params }: PageProps) {
-  const { locale, year, slug } = await params;
+export default async function TranslationPostPage({ params }: PageProps) {
+  const { locale, year, slug, lang } = await params;
   if (!isValidLocale(locale)) redirect("/en");
 
   const t = getMessages(locale as Locale);
   const cfg = getSiteConfig();
-  const post = getPostBySlug(year, slug);
+  const post = getPostBySlug(year, slug, lang);
   if (!post) notFound();
 
-  const { prev, next } = getAdjacentPosts(year, slug);
-  const translations = getTranslations(year, slug, "en");
+  const translations = getTranslations(year, slug, lang);
   const processedContent = preprocessAdmonitions(post.content);
   const tocEntries = extractToc(post.content);
   const navLinks = getNavLinks(locale, t);
@@ -89,7 +92,6 @@ export default async function LocalePostPage({ params }: PageProps) {
   return (
     <div className="site-shell">
       <Header links={navLinks} locale={locale as Locale} />
-
       <main className="post-frame">
         <article className="post-shell" dir={isRtl(post.lang ?? "en") ? "rtl" : undefined}>
           <header className="post-header">
@@ -120,7 +122,6 @@ export default async function LocalePostPage({ params }: PageProps) {
                 <SponsorButton label={cfg.sponsor.label} url={cfg.sponsor.url} />
               )}
             </div>
-
             {post.category && (
               <div className="post-footer__meta">
                 <span className="post-footer__label">Category</span>
@@ -129,7 +130,6 @@ export default async function LocalePostPage({ params }: PageProps) {
                 </Link>
               </div>
             )}
-
             {post.tags.length > 0 && (
               <div className="post-footer__meta">
                 <span className="post-footer__label">Tags</span>
@@ -140,23 +140,6 @@ export default async function LocalePostPage({ params }: PageProps) {
                 </div>
               </div>
             )}
-
-            {(prev || next) && (
-              <nav className="post-nav">
-                <div className="post-nav__prev">
-                  {prev && <>
-                    <span className="post-nav__label">← Older</span>
-                    <Link href={`/${locale}/blog/${prev.year}/${prev.slug}`}>{prev.title}</Link>
-                  </>}
-                </div>
-                <div className="post-nav__next">
-                  {next && <>
-                    <span className="post-nav__label">Newer →</span>
-                    <Link href={`/${locale}/blog/${next.year}/${next.slug}`}>{next.title}</Link>
-                  </>}
-                </div>
-              </nav>
-            )}
           </footer>
         </article>
 
@@ -166,8 +149,8 @@ export default async function LocalePostPage({ params }: PageProps) {
       {cfg.disqus.shortname && (
         <DisqusComments
           shortname={cfg.disqus.shortname}
-          pageUrl={`${cfg.site.url}/${locale}/blog/${year}/${slug}`}
-          pageIdentifier={`${year}/${slug}`}
+          pageUrl={`${cfg.site.url}/${locale}/blog/${year}/${slug}/${lang}`}
+          pageIdentifier={`${year}/${slug}/${lang}`}
         />
       )}
       <Footer locale={locale as Locale} />

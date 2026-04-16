@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getNavLinks } from "@/lib/nav";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { getSiteConfig } from "@/lib/config";
 import { getAboutConfig } from "@/lib/about";
 import { getMessages, isValidLocale, locales, type Locale } from "@/lib/i18n";
@@ -61,14 +63,7 @@ export default async function AboutPage({
         </div>
       </main>
 
-      <footer className="site-footer">
-        <p>{t.footer.text}</p>
-        <p className="footer-meta">
-          {t.footer.served} <code>{cfg.footer.version}</code>,{" "}
-          {t.footer.source}{" "}
-          <a href={cfg.footer.github}>here</a>.
-        </p>
-      </footer>
+      <Footer locale={locale as Locale} />
     </div>
   );
 }
