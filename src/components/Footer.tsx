@@ -8,8 +8,14 @@ export default function Footer({ locale }: { locale: Locale }) {
     <footer className="site-footer">
       <p>{t.footer.text}</p>
       <p className="footer-meta">
-        {t.footer.served} <code>{cfg.footer.version}</code>,{" "}
-        {t.footer.source}{" "}
+        {t.footer.served}{" "}
+        <a
+          href={cfg.footer.github ? `${cfg.footer.github}/commit/${cfg.footer.version}` : undefined}
+          className="footer-commit"
+        >
+          <code>{cfg.footer.version}</code>
+        </a>
+        ,{" "}{t.footer.source}{" "}
         <a href={cfg.footer.github}>here</a>.
       </p>
     </footer>

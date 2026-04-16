@@ -333,6 +333,13 @@ img {
   color: var(--text-muted);
 }
 
+.footer-commit {
+  text-decoration: none;
+}
+.footer-commit:hover code {
+  text-decoration: underline;
+}
+
 .footer-meta code {
   font-family: var(--font-nav);
   font-size: 0.74rem;
