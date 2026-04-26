@@ -1,0 +1,475 @@
+---
+title: "Автоматические релизы с GitHub Actions, VERSION и Conventional Commits"
+date: 2026-04-26
+category: DevOps
+eyebrow: Автоматизация релизов
+summary: Практическое руководство по настройке и использованию GitHub Actions workflow, который читает VERSION, создаёт теги, пишет Release Notes из commit message, публикует GitHub Release и отправляет Docker-образ в GHCR.
+lang: ru
+tags: [github-actions, release, devops, docker, conventional-commits]
+---
+
+Релиз должен быть скучной операцией. Меняем версию, отправляем изменения в `main`, а pipeline делает остальное: создаёт tag, пишет Release Notes, публикует GitHub Release и отправляет Docker-образ.
+
+В этой схеме файл `VERSION` работает как переключатель релиза. Когда `VERSION` меняется в ветке `main`, GitHub Actions читает номер версии, создаёт tag вида `v1.0.1`, собирает Release Notes из коммитов после предыдущего tag, публикует GitHub Release и отправляет Docker-образ в GitHub Container Registry.
+
+Ниже две части: как написать такой Actions workflow и как пользоваться им без лишней ручной работы.
+
+## Модель релиза
+
+Система опирается на несколько понятных источников данных:
+
+| Источник | Назначение |
+|---|---|
+| `VERSION` | Номер релиза |
+| commit message | Текст для Release Notes |
+| git tag | Граница между релизами |
+| GitHub Release | Публичный changelog |
+| GHCR image tag | Версия Docker-артефакта |
+
+Workflow не пытается угадать следующую версию. Он ждёт, пока человек изменит `VERSION`.
+
+Например:
+
+```txt
+1.0.0
+```
+
+становится:
+
+```txt
+1.0.1
+```
+
+После push в `main` начинается релиз.
+
+## Зачем нужен файл VERSION
+
+Релизы можно запускать по-разному: через tag, pull request, версию из `package.json`, semantic-release или ручной запуск workflow.
+
+Для небольшого сайта или приложения обычный файл `VERSION` часто удобнее:
+
+1. Он явно виден в репозитории.
+2. Его легко проверить в pull request.
+3. Обычные push с кодом не создают случайный релиз.
+
+Workflow можно запускать только при изменении `VERSION`:
+
+```yaml
+on:
+  push:
+    branches: [main]
+    paths:
+      - VERSION
+  workflow_dispatch:
+```
+
+Фильтр `paths` здесь важен. Изменение документации, CSS или кода не опубликует новый релиз, если файл `VERSION` не изменился.
+
+## Права workflow
+
+Задаче релиза нужны права на создание tag, публикацию GitHub Release и отправку пакета в GHCR.
+
+```yaml
+permissions:
+  contents: write
+  packages: write
+```
+
+`contents: write` позволяет отправить tag и создать GitHub Release. `packages: write` нужен для публикации Docker-образа.
+
+Без этих прав workflow может успешно собрать проект, но упасть на этапе публикации.
+
+## Checkout с полной историей
+
+Release Notes строятся по разнице между текущим commit и предыдущим tag. Поэтому workflow должен получить git tags и достаточную историю.
+
+```yaml
+- name: Checkout
+  uses: actions/checkout@v4
+  with:
+    fetch-depth: 0
+```
+
+Стандартный checkout обычно shallow. Для простого CI этого достаточно, но для changelog лучше получить всю историю. `fetch-depth: 0` позволяет выполнять:
+
+```bash
+git describe --tags --abbrev=0
+git log v1.0.0..HEAD --oneline --no-merges
+```
+
+## Чтение VERSION
+
+Workflow читает версию из файла `VERSION` и записывает значения в outputs.
+
+```yaml
+- name: Read VERSION
+  id: ver
+  run: |
+    VERSION=$(cat VERSION | tr -d '[:space:]')
+    echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+    echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+```
+
+Если `VERSION` содержит:
+
+```txt
+1.0.1
+```
+
+то outputs будут такими:
+
+```text
+version=1.0.1
+tag=v1.0.1
+```
+
+Следующие шаги могут обращаться к ним так:
+
+```yaml
+${{ steps.ver.outputs.version }}
+${{ steps.ver.outputs.tag }}
+```
+
+## Защита от повторного релиза
+
+Один и тот же релиз не должен создаваться дважды. Перед публикацией workflow проверяет, есть ли такой tag на remote.
+
+```yaml
+- name: Check tag exists
+  id: tag_check
+  run: |
+    if git ls-remote --tags origin \
+         "refs/tags/${{ steps.ver.outputs.tag }}" | grep -q .; then
+      echo "exists=true" >> "$GITHUB_OUTPUT"
+    else
+      echo "exists=false" >> "$GITHUB_OUTPUT"
+    fi
+```
+
+Затем шаги публикации используют одно условие:
+
+```yaml
+if: steps.tag_check.outputs.exists == 'false'
+```
+
+Если `v1.0.1` уже существует, workflow не будет перезаписывать релиз.
+
+## Генерация Release Notes из коммитов
+
+Release Notes строятся из commit subjects после предыдущего tag.
+
+```bash
+LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+if [ -n "$LAST_TAG" ]; then
+  COMMITS=$(git log "${LAST_TAG}..HEAD" --oneline --no-merges)
+else
+  COMMITS=$(git log --oneline --no-merges)
+fi
+```
+
+Для первого релиза предыдущего tag ещё нет, поэтому берутся все коммиты. Для следующих релизов берутся только коммиты после последнего tag.
+
+Например:
+
+```text
+a2c9b56 fix(mermaid): fix node text clipping in flowchart diagrams
+dad844c feat(about): rewrite About page and homepage description
+35fc70e feat(posts): add Dependabot and Conventional Commits guides
+9d2a111 docs(posts): update the release guide
+7b64053 chore: add wrangler.toml
+```
+
+Workflow отделяет hash от сообщения:
+
+```bash
+HASH=$(echo "$line" | cut -d' ' -f1)
+MSG=$(echo "$line" | cut -d' ' -f2-)
+```
+
+Сообщения с `fix:` или `fix(scope):` попадают в `Bug Fixes`:
+
+```bash
+if echo "$MSG" | grep -qiE "^fix(\([^)]*\))?:"; then
+  CLEAN=$(echo "$MSG" | sed -E \
+    's/^fix\(([^)]+)\): /\1: /i; s/^fix: //i')
+  FIX_LINES="${FIX_LINES}- ${CLEAN} (${HASH})\n"
+fi
+```
+
+Сообщения с `feat:` или `feat(scope):` попадают в `Features`:
+
+```bash
+elif echo "$MSG" | grep -qiE "^feat(\([^)]*\))?:"; then
+  CLEAN=$(echo "$MSG" | sed -E \
+    's/^feat\(([^)]+)\): /\1: /i; s/^feat: //i')
+  FEAT_LINES="${FEAT_LINES}- ${CLEAN} (${HASH})\n"
+fi
+```
+
+Остальные коммиты не попадают в публичные Release Notes. Это относится к `docs`, `chore`, `ci` и временным сообщениям вроде `update`.
+
+## Как писать commit message
+
+Этому workflow нужен небольшой поднабор Conventional Commits.
+
+Для исправлений используйте `fix`:
+
+```bash
+git commit -m "fix(mermaid): fix node text clipping in flowchart diagrams"
+```
+
+В Release Notes это станет:
+
+```md
+## Bug Fixes
+
+- mermaid: fix node text clipping in flowchart diagrams (a2c9b56)
+```
+
+Для новых возможностей используйте `feat`:
+
+```bash
+git commit -m "feat(posts): add Dependabot guide"
+```
+
+Результат:
+
+```md
+## Features
+
+- posts: add Dependabot guide (35fc70e)
+```
+
+Для статей и документации используйте `docs`:
+
+```bash
+git commit -m "docs(posts): update GitHub Actions release guide"
+```
+
+Такой commit остаётся в git history, но не появляется в GitHub Release.
+
+Для технических и служебных изменений используйте `chore` или `ci`:
+
+```bash
+git commit -m "chore: release 1.0.1"
+git commit -m "ci: update release workflow"
+```
+
+Они тоже не попадают в Release Notes. Страница релиза остаётся местом для пользовательских исправлений и новых возможностей.
+
+Если в релизе нет ни одного `fix` или `feat` commit, тело релиза будет таким:
+
+```md
+No user-facing changes.
+```
+
+Главное — не сложность, а постоянство. Когда commit message содержит структуру, workflow может собрать аккуратные Release Notes.
+
+## Создание Git Tag
+
+После генерации Release Notes workflow создаёт annotated tag.
+
+```yaml
+- name: Create git tag
+  if: steps.tag_check.outputs.exists == 'false'
+  run: |
+    git config user.name "github-actions[bot]"
+    git config user.email "github-actions[bot]@users.noreply.github.com"
+    git tag -a "${{ steps.ver.outputs.tag }}" \
+            -m "Release ${{ steps.ver.outputs.tag }}"
+    git push origin "${{ steps.ver.outputs.tag }}"
+```
+
+Annotated tag удобен для релизов: у него есть сообщение, и он хорошо работает как явная граница версии.
+
+Для версии `1.0.1` tag будет:
+
+```text
+v1.0.1
+```
+
+## Публикация GitHub Release
+
+Для публикации используется `softprops/action-gh-release`.
+
+```yaml
+- name: Create GitHub Release
+  if: steps.tag_check.outputs.exists == 'false'
+  uses: softprops/action-gh-release@v2
+  with:
+    tag_name: ${{ steps.ver.outputs.tag }}
+    name: ${{ steps.ver.outputs.tag }}
+    body_path: ${{ steps.notes.outputs.notes_path }}
+    draft: false
+    prerelease: false
+```
+
+Главное поле здесь — `body_path`. Workflow сначала записывает Release Notes во временный файл, а затем передаёт путь к нему в action.
+
+Так проще поддерживать многострочный Markdown и не бороться с экранированием внутри YAML.
+
+## Публикация Docker-образа
+
+Тот же релиз может публиковать Docker-образ.
+
+```yaml
+- name: Set up Docker Buildx
+  if: steps.tag_check.outputs.exists == 'false'
+  uses: docker/setup-buildx-action@v3
+
+- name: Log in to GHCR
+  if: steps.tag_check.outputs.exists == 'false'
+  uses: docker/login-action@v3
+  with:
+    registry: ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+Затем `docker/metadata-action` создаёт image tags:
+
+```yaml
+tags: |
+  type=semver,pattern={{version}},value=${{ steps.ver.outputs.version }}
+  type=semver,pattern={{major}}.{{minor}},value=${{ steps.ver.outputs.version }}
+  type=raw,value=latest
+```
+
+Для `1.0.1` получится:
+
+```text
+ghcr.io/owner/repo:1.0.1
+ghcr.io/owner/repo:1.0
+ghcr.io/owner/repo:latest
+```
+
+Финальный шаг собирает и отправляет образ:
+
+```yaml
+- name: Build & push image
+  if: steps.tag_check.outputs.exists == 'false'
+  uses: docker/build-push-action@v5
+  with:
+    context: .
+    push: true
+    tags: ${{ steps.meta.outputs.tags }}
+    labels: ${{ steps.meta.outputs.labels }}
+    cache-from: type=gha
+    cache-to: type=gha,mode=max
+```
+
+## Как пользоваться каждый день
+
+Сначала делайте обычные коммиты:
+
+```bash
+git commit -m "fix(mermaid): fix node text clipping in flowchart diagrams"
+git commit -m "feat(about): rewrite About page and homepage description"
+git commit -m "docs(posts): update GitHub Actions release guide"
+git commit -m "chore: add wrangler.toml for Cloudflare Workers static deployment"
+```
+
+Когда пора выпускать релиз, измените `VERSION`:
+
+```txt
+1.0.2
+```
+
+Затем commit и push:
+
+```bash
+git add VERSION
+git commit -m "chore: release 1.0.2"
+git push origin main
+```
+
+На GitHub проверьте:
+
+```text
+Actions -> Release
+```
+
+После успешного выполнения откройте:
+
+```text
+Releases -> v1.0.2
+```
+
+## Нужно ли синхронизировать package.json
+
+Если проект написан на Node, обычно стоит держать `package.json` и `package-lock.json` в той же версии, что и `VERSION`.
+
+Команда:
+
+```bash
+npm version 1.0.2 --no-git-tag-version
+```
+
+После этого можно отправить всё одним commit:
+
+```bash
+git add VERSION package.json package-lock.json
+git commit -m "chore: release 1.0.2"
+```
+
+Workflow всё равно читает только `VERSION`. Обновление `package.json` нужно для аккуратности и согласованности версий, а не для запуска релиза.
+
+## Частые ошибки
+
+Первая ошибка — повторно использовать уже опубликованную версию. Если `v1.0.1` уже существует, `VERSION=1.0.1` не создаст новый релиз.
+
+Вторая ошибка — слишком расплывчатые commit message для изменений, которые должны быть видны в релизе. Такой коммит сработает:
+
+```bash
+git commit -m "update"
+```
+
+Но он не попадёт в Release Notes, потому что это не `fix` и не `feat`.
+
+Если это настоящее исправление, лучше так:
+
+```bash
+git commit -m "fix(search): keep modal results scrollable on mobile"
+```
+
+Тогда changelog будет полезным:
+
+```md
+- search: keep modal results scrollable on mobile (commit_hash)
+```
+
+Третья ошибка — ожидать релиз от любого push. Этот workflow публикует релиз только тогда, когда в `main` изменился `VERSION`.
+
+## Защита main
+
+Так как релиз запускается из `main`, ветку стоит защитить.
+
+Для личного проекта достаточно минимальной защиты:
+
+```text
+Block force pushes
+Restrict deletions
+```
+
+Для командного проекта можно добавить:
+
+```text
+Require a pull request before merging
+Require status checks before merging
+```
+
+Required checks стоит включать только после появления настоящего CI workflow. Release workflow не заменяет CI, потому что запускается только при изменении `VERSION`.
+
+## Чеклист перед релизом
+
+Перед публикацией проверьте:
+
+1. Commit messages написаны через понятные `fix(...)`, `feat(...)` или служебные префиксы.
+2. Изменения статей и документации используют `docs(posts): ...`, чтобы не попадать в Release Notes.
+3. `VERSION` содержит новую версию.
+4. Если проект использует npm-версию, `package.json` и `package-lock.json` синхронизированы.
+5. Эта версия ещё не была опубликована.
+6. Release commit отправлен в `main`.
+
+Система не пытается быть умной. Именно поэтому она предсказуема. `VERSION` решает, когда будет релиз, git tags показывают, какие изменения вошли в релиз, а commit messages определяют, как будут выглядеть Release Notes.

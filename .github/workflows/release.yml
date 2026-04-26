@@ -48,7 +48,7 @@ jobs:
       #   Conventional commit prefixes recognised:
       #     feat / feat(scope)  → ## Features
       #     fix  / fix(scope)   → ## Bug Fixes
-      #   Everything else       → ## Other Changes
+      #   Everything else       → omitted from release notes
       #
       #   Output format (matches screenshot style):
       #     - scope: message (a1b2c3d)
@@ -71,7 +71,6 @@ jobs:
           # ── collect lines by category ────────────────────────────────────
           FEAT_LINES=""
           FIX_LINES=""
-          OTHER_LINES=""
 
           while IFS= read -r line; do
             [ -z "$line" ] && continue
@@ -87,9 +86,6 @@ jobs:
               CLEAN=$(echo "$MSG" | sed -E \
                 's/^fix\(([^)]+)\): /\1: /i; s/^fix: //i')
               FIX_LINES="${FIX_LINES}- ${CLEAN} (${HASH})\n"
-
-            else
-              OTHER_LINES="${OTHER_LINES}- ${MSG} (${HASH})\n"
             fi
           done <<< "$COMMITS"
 
@@ -106,10 +102,8 @@ jobs:
             printf "\n"                  >> "$NOTES"
           fi
 
-          if [ -n "$OTHER_LINES" ]; then
-            printf "## Other Changes\n\n" >> "$NOTES"
-            printf "%b" "$OTHER_LINES"    >> "$NOTES"
-            printf "\n"                   >> "$NOTES"
+          if [ -z "$FIX_LINES" ] && [ -z "$FEAT_LINES" ]; then
+            printf "No user-facing changes.\n" >> "$NOTES"
           fi
 
           echo "notes_path=${NOTES}" >> "$GITHUB_OUTPUT"

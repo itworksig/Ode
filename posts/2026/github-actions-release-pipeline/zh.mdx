@@ -1,0 +1,475 @@
+---
+title: "用 GitHub Actions、VERSION 和 Conventional Commits 自动发布 Release"
+date: 2026-04-26
+category: DevOps
+eyebrow: 发布自动化
+summary: 一篇从零拆解 GitHub Actions 发布流程的实践指南：读取 VERSION、创建 tag、根据 commit 生成 Release Notes、发布 GitHub Release，并推送 Docker 镜像。
+lang: zh
+tags: [github-actions, release, devops, docker, conventional-commits]
+---
+
+Release 最好是一件无聊的事。改版本号，推到 `main`，剩下的交给流水线：创建 tag、生成 Release Notes、发布 GitHub Release、推送 Docker 镜像。
+
+这套 workflow 的核心很简单：用根目录的 `VERSION` 文件作为发布开关。只要 `main` 分支上的 `VERSION` 发生变化，GitHub Actions 就会读取版本号，创建类似 `v1.0.1` 的 tag，根据上一个 tag 之后的 commit 生成 Release Notes，发布 GitHub Release，并把 Docker 镜像推送到 GitHub Container Registry。
+
+这篇文章分两部分：先讲这个 Actions 怎么写，再讲日常怎么使用。
+
+## 发布模型
+
+整个设计只依赖几个明确的输入：
+
+| 输入 | 作用 |
+|---|---|
+| `VERSION` | 发布版本号的来源 |
+| commit message | Release Notes 的来源 |
+| git tag | 两个版本之间的边界 |
+| GitHub Release | 给用户看的 changelog |
+| GHCR image tag | 可部署的镜像版本 |
+
+workflow 不会自动猜测下一个版本号。它只等待你手动修改 `VERSION`。
+
+也就是说：
+
+```txt
+1.0.0
+```
+
+改成：
+
+```txt
+1.0.1
+```
+
+这次改动推送到 `main` 后，发布流程才会开始。
+
+## 为什么用 VERSION 文件
+
+触发 release 的方式有很多：推 tag、合并 PR、读取 npm 版本号、使用 semantic-release，或者手动运行 workflow。
+
+对于一个小型网站或应用，一个普通的 `VERSION` 文件通常更直接：
+
+1. 它在仓库里很显眼。
+2. 它在 PR 里很好 review。
+3. 它能避免普通代码 push 误触发发布。
+
+workflow 可以只在 `VERSION` 改动时运行：
+
+```yaml
+on:
+  push:
+    branches: [main]
+    paths:
+      - VERSION
+  workflow_dispatch:
+```
+
+这里的 `paths` 很关键。普通文档修改、样式调整、代码修复都不会发布新版。只有 `VERSION` 一起变了，才会触发发布。
+
+## Workflow 权限
+
+发布任务需要创建 tag、创建 GitHub Release，还要把镜像推送到 GHCR。
+
+```yaml
+permissions:
+  contents: write
+  packages: write
+```
+
+`contents: write` 用来推送 tag 和创建 GitHub Release。`packages: write` 用来发布 Docker 镜像。
+
+如果缺少这些权限，workflow 可能前面都能跑完，但到发布阶段失败。
+
+## Checkout 要拿完整历史
+
+Release Notes 是通过“当前 commit”和“上一个 tag”之间的差异生成的，所以 workflow 必须拿到 git tag 和足够的提交历史。
+
+```yaml
+- name: Checkout
+  uses: actions/checkout@v4
+  with:
+    fetch-depth: 0
+```
+
+默认 checkout 是浅克隆，对普通 CI 足够，但不适合生成 changelog。`fetch-depth: 0` 可以让下面这些命令正常工作：
+
+```bash
+git describe --tags --abbrev=0
+git log v1.0.0..HEAD --oneline --no-merges
+```
+
+## 读取 VERSION
+
+workflow 会从 `VERSION` 文件读取版本号，并写入 GitHub Actions output。
+
+```yaml
+- name: Read VERSION
+  id: ver
+  run: |
+    VERSION=$(cat VERSION | tr -d '[:space:]')
+    echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+    echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+```
+
+如果 `VERSION` 是：
+
+```txt
+1.0.1
+```
+
+那么 output 就是：
+
+```text
+version=1.0.1
+tag=v1.0.1
+```
+
+后面的 step 可以这样引用：
+
+```yaml
+${{ steps.ver.outputs.version }}
+${{ steps.ver.outputs.tag }}
+```
+
+## 避免重复发布
+
+同一个版本不应该发布两次。所以真正发布之前，workflow 会先检查远程是否已经有这个 tag。
+
+```yaml
+- name: Check tag exists
+  id: tag_check
+  run: |
+    if git ls-remote --tags origin \
+         "refs/tags/${{ steps.ver.outputs.tag }}" | grep -q .; then
+      echo "exists=true" >> "$GITHUB_OUTPUT"
+    else
+      echo "exists=false" >> "$GITHUB_OUTPUT"
+    fi
+```
+
+之后发布相关的 step 都加同一个条件：
+
+```yaml
+if: steps.tag_check.outputs.exists == 'false'
+```
+
+如果 `v1.0.1` 已经存在，workflow 就不会重复创建 release。
+
+## 根据 commit 生成 Release Notes
+
+Release Notes 来自上一个 tag 之后的 commit subject。
+
+```bash
+LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+if [ -n "$LAST_TAG" ]; then
+  COMMITS=$(git log "${LAST_TAG}..HEAD" --oneline --no-merges)
+else
+  COMMITS=$(git log --oneline --no-merges)
+fi
+```
+
+第一次发布时没有上一个 tag，所以会读取所有 commit。之后的 release 只读取上一个 tag 之后的 commit。
+
+例如有这些提交：
+
+```text
+a2c9b56 fix(mermaid): fix node text clipping in flowchart diagrams
+dad844c feat(about): rewrite About page and homepage description
+35fc70e feat(posts): add Dependabot and Conventional Commits guides
+9d2a111 docs(posts): update the release guide
+7b64053 chore: add wrangler.toml
+```
+
+workflow 会拆出 hash 和 message：
+
+```bash
+HASH=$(echo "$line" | cut -d' ' -f1)
+MSG=$(echo "$line" | cut -d' ' -f2-)
+```
+
+以 `fix:` 或 `fix(scope):` 开头的提交会进入 `Bug Fixes`：
+
+```bash
+if echo "$MSG" | grep -qiE "^fix(\([^)]*\))?:"; then
+  CLEAN=$(echo "$MSG" | sed -E \
+    's/^fix\(([^)]+)\): /\1: /i; s/^fix: //i')
+  FIX_LINES="${FIX_LINES}- ${CLEAN} (${HASH})\n"
+fi
+```
+
+以 `feat:` 或 `feat(scope):` 开头的提交会进入 `Features`：
+
+```bash
+elif echo "$MSG" | grep -qiE "^feat(\([^)]*\))?:"; then
+  CLEAN=$(echo "$MSG" | sed -E \
+    's/^feat\(([^)]+)\): /\1: /i; s/^feat: //i')
+  FEAT_LINES="${FEAT_LINES}- ${CLEAN} (${HASH})\n"
+fi
+```
+
+其他类型会从公开的 Release Notes 中省略，包括 `docs`、`chore`、`ci`，以及类似 `update` 这样的临时提交。
+
+## Commit Message 应该怎么写
+
+这个 workflow 只需要 Conventional Commits 的一个小子集。
+
+修 bug 用 `fix`：
+
+```bash
+git commit -m "fix(mermaid): fix node text clipping in flowchart diagrams"
+```
+
+显示为：
+
+```md
+## Bug Fixes
+
+- mermaid: fix node text clipping in flowchart diagrams (a2c9b56)
+```
+
+新功能用 `feat`：
+
+```bash
+git commit -m "feat(posts): add Dependabot guide"
+```
+
+显示为：
+
+```md
+## Features
+
+- posts: add Dependabot guide (35fc70e)
+```
+
+博文和文档修改用 `docs`：
+
+```bash
+git commit -m "docs(posts): update GitHub Actions release guide"
+```
+
+这类 commit 会保留在 git 历史中，但不会显示在 GitHub Release 里。
+
+维护和流水线修改可以用 `chore` 或 `ci`：
+
+```bash
+git commit -m "chore: release 1.0.1"
+git commit -m "ci: update release workflow"
+```
+
+它们也会被省略。Release 页面只保留面向用户的修复和功能。
+
+如果某次 release 没有任何 `fix` 或 `feat` commit，正文会显示：
+
+```md
+No user-facing changes.
+```
+
+关键不是复杂，而是一致。commit message 有结构，workflow 才能生成干净的 Release Notes。
+
+## 创建 Git Tag
+
+Release Notes 生成后，workflow 会创建 annotated tag。
+
+```yaml
+- name: Create git tag
+  if: steps.tag_check.outputs.exists == 'false'
+  run: |
+    git config user.name "github-actions[bot]"
+    git config user.email "github-actions[bot]@users.noreply.github.com"
+    git tag -a "${{ steps.ver.outputs.tag }}" \
+            -m "Release ${{ steps.ver.outputs.tag }}"
+    git push origin "${{ steps.ver.outputs.tag }}"
+```
+
+Annotated tag 带 message，更适合作为正式 release 的边界。
+
+如果版本是 `1.0.1`，tag 就是：
+
+```text
+v1.0.1
+```
+
+## 发布 GitHub Release
+
+这里用 `softprops/action-gh-release` 创建 GitHub Release。
+
+```yaml
+- name: Create GitHub Release
+  if: steps.tag_check.outputs.exists == 'false'
+  uses: softprops/action-gh-release@v2
+  with:
+    tag_name: ${{ steps.ver.outputs.tag }}
+    name: ${{ steps.ver.outputs.tag }}
+    body_path: ${{ steps.notes.outputs.notes_path }}
+    draft: false
+    prerelease: false
+```
+
+重点是 `body_path`。workflow 会先把 Release Notes 写入一个临时文件，再把文件路径交给 release action。
+
+这样比在 YAML 里硬写多行 Markdown 更稳，也更容易维护。
+
+## 发布 Docker 镜像
+
+同一个 release 也可以顺手发布 Docker 镜像。
+
+```yaml
+- name: Set up Docker Buildx
+  if: steps.tag_check.outputs.exists == 'false'
+  uses: docker/setup-buildx-action@v3
+
+- name: Log in to GHCR
+  if: steps.tag_check.outputs.exists == 'false'
+  uses: docker/login-action@v3
+  with:
+    registry: ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+然后用 `docker/metadata-action` 生成镜像 tag：
+
+```yaml
+tags: |
+  type=semver,pattern={{version}},value=${{ steps.ver.outputs.version }}
+  type=semver,pattern={{major}}.{{minor}},value=${{ steps.ver.outputs.version }}
+  type=raw,value=latest
+```
+
+例如版本是 `1.0.1`，会得到：
+
+```text
+ghcr.io/owner/repo:1.0.1
+ghcr.io/owner/repo:1.0
+ghcr.io/owner/repo:latest
+```
+
+最后构建并推送：
+
+```yaml
+- name: Build & push image
+  if: steps.tag_check.outputs.exists == 'false'
+  uses: docker/build-push-action@v5
+  with:
+    context: .
+    push: true
+    tags: ${{ steps.meta.outputs.tags }}
+    labels: ${{ steps.meta.outputs.labels }}
+    cache-from: type=gha
+    cache-to: type=gha,mode=max
+```
+
+## 日常怎么用
+
+平时正常提交代码：
+
+```bash
+git commit -m "fix(mermaid): fix node text clipping in flowchart diagrams"
+git commit -m "feat(about): rewrite About page and homepage description"
+git commit -m "docs(posts): update GitHub Actions release guide"
+git commit -m "chore: add wrangler.toml for Cloudflare Workers static deployment"
+```
+
+准备发布时，修改 `VERSION`：
+
+```txt
+1.0.2
+```
+
+提交并推送：
+
+```bash
+git add VERSION
+git commit -m "chore: release 1.0.2"
+git push origin main
+```
+
+然后去 GitHub 看：
+
+```text
+Actions -> Release
+```
+
+workflow 成功后，再看：
+
+```text
+Releases -> v1.0.2
+```
+
+## package.json 要不要同步
+
+如果项目是 Node 应用，建议让 `package.json` 和 `package-lock.json` 的版本也跟 `VERSION` 保持一致。
+
+可以用：
+
+```bash
+npm version 1.0.2 --no-git-tag-version
+```
+
+然后一起提交：
+
+```bash
+git add VERSION package.json package-lock.json
+git commit -m "chore: release 1.0.2"
+```
+
+workflow 仍然只读取 `VERSION`。同步 `package.json` 是为了版本一致，不是为了触发 release。
+
+## 常见错误
+
+第一个错误是重复使用已经发布过的版本。如果 `v1.0.1` 已经存在，再把 `VERSION` 设置为 `1.0.1` 不会重新发布。
+
+第二个错误是需要展示在 release 里的变更却写得太随意。这样也能提交：
+
+```bash
+git commit -m "update"
+```
+
+但它不会进入 Release Notes，因为它不是 `fix` 或 `feat`。
+
+如果这是一个真正的 bug fix，更好的写法是：
+
+```bash
+git commit -m "fix(search): keep modal results scrollable on mobile"
+```
+
+生成的 changelog 就有用得多：
+
+```md
+- search: keep modal results scrollable on mobile (commit_hash)
+```
+
+第三个错误是以为普通 push 会发布 release。这个 workflow 只有在 `main` 上的 `VERSION` 变化时才发布，这是有意设计的。
+
+## Branch Protection
+
+因为 release 是从 `main` 触发的，所以建议保护 `main` 分支。
+
+个人项目可以先开最小保护：
+
+```text
+Block force pushes
+Restrict deletions
+```
+
+多人协作项目再加：
+
+```text
+Require a pull request before merging
+Require status checks before merging
+```
+
+只有在仓库里真的有 CI workflow 之后，再开启 required checks。release workflow 不是 CI，因为它只在 `VERSION` 变化时运行。
+
+## 发布前检查
+
+发布前看一遍：
+
+1. commit message 是否用了清楚的 `fix(...)`、`feat(...)` 或维护类前缀。
+2. 博文和文档修改是否用了 `docs(posts): ...`，避免进入 Release Notes。
+3. `VERSION` 是否是新版本。
+4. 如果项目使用 npm 版本号，`package.json` 和 `package-lock.json` 是否同步。
+5. 这个版本是否从未发布过。
+6. release commit 是否已经推送到 `main`。
+
+这套系统并不聪明，但它可预测。`VERSION` 决定什么时候发布，git tag 决定这次发布包含哪些变化，commit message 决定 Release Notes 长什么样。
