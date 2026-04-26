@@ -23,8 +23,9 @@ export default function Mermaid({ chart }: Props) {
           lineColor: "#665c54",
           secondaryColor: "#f2e5bc",
           tertiaryColor: "#f9f5d7",
-          fontFamily: "Iosevka Aile, monospace",
           fontSize: "14px",
+          // fontFamily intentionally omitted — Mermaid must use the same font
+          // for both text measurement and rendering, or nodes will be undersized.
         },
       });
 

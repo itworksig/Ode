@@ -1329,8 +1329,25 @@ img {
 }
 
 .mermaid-diagram svg {
-  max-width: 100%;
+  display: block;
+  margin: 0 auto;
   height: auto;
+  overflow: visible;
+}
+
+/* Mermaid uses <foreignObject> for node labels which clips by default.
+   Let text overflow the measured box so nothing is truncated. */
+.mermaid-diagram foreignObject {
+  overflow: visible;
+}
+
+.mermaid-diagram .label-container {
+  overflow: visible;
+}
+
+.mermaid-diagram .label {
+  white-space: nowrap;
+  overflow: visible;
 }
 
 .mermaid-loading {
