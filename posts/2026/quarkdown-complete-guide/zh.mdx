@@ -1,0 +1,519 @@
+---
+title: "Quarkdown：写出漂亮技术文档的实用指南"
+date: 2026-05-19
+category: Guide
+eyebrow: 文档工程
+summary: "一篇详细的 Quarkdown 实战指南：项目结构、元信息、封面、页码、目录、图片、代码高亮、提示框、字体、中俄混排和 PDF 导出。"
+featured: true
+lang: zh
+tags: [quarkdown, markdown, pdf, documentation, typesetting]
+---
+
+Quarkdown 处在一个很实用的位置：它比普通 Markdown 更强，但又没有完整排版系统那么沉重。你仍然写一个可读的 `.qd` 源文件，同时可以用函数控制文档元信息、分页、交叉引用、代码块、提示框、布局、字体和 PDF 导出。
+
+如果你喜欢 Markdown 的写作体验，但又希望输出像正式讲义、论文笔记、技术手册或文档站一样精致，Quarkdown 很值得学。
+
+![Quarkdown 写作流程](/images/quarkdown-complete-guide.svg)
+
+> *图 1 — 一个实用的 Quarkdown 工作流：写可读源文件，编译，然后发布为 HTML、PDF、幻灯片或文档站。*
+
+这篇文章不是函数大全，而是一份实战地图。重点是建立判断力：哪些内容交给 Markdown，哪些交给 Quarkdown 函数，什么时候应该用 CSS。
+
+:::tip
+如果你已经会 Markdown，那么你已经掌握了 Quarkdown 的基础层。新的部分是学习什么时候加入 `.docname`、`.doctype`、`.tableofcontents`、`.pageformat`、`.box`、`.code`、`.font` 和 `.css`。
+:::
+
+## Quarkdown 适合做什么
+
+Quarkdown 不只是 Markdown 渲染器，更像一个文档编译器。你写 `.qd` 源文件，然后把它编译成目标格式。
+
+它很适合：
+
+- 可打印 PDF 讲义
+- 课程笔记
+- 技术手册
+- 工程内部文档
+- 研究笔记
+- 文档站
+- 幻灯片
+- 带图表、公式和代码的长文
+
+它和普通 Markdown 最大的区别是：文档自己可以声明自己的行为。源文件可以说：我是分页文档，用 A4 纸，页眉显示当前章节，图表自动编号，目录后页码从 1 重新开始，使用这套字体，最后导出 PDF。
+
+换句话说，Markdown 负责正文，Quarkdown 负责正文周围的文档系统。
+
+## 基本工作流
+
+最小流程是：
+
+```bash
+quarkdown create my-doc
+cd my-doc
+quarkdown c main.qd
+```
+
+真正写作时最常用：
+
+```bash
+quarkdown c main.qd -p -w
+```
+
+`-p` 打开预览，`-w` 监听文件变化。准备导出时：
+
+```bash
+quarkdown c main.qd --pdf
+```
+
+做正式模板时，建议经常使用严格模式：
+
+```bash
+quarkdown c main.qd --strict
+```
+
+严格模式能把函数错误提前暴露出来，而不是让错误框混进生成文档里。
+
+## 推荐项目结构
+
+项目可以很小，但清晰结构会省很多事：
+
+```text
+my-quarkdown-book/
+├── main.qd
+├── assets/
+│   ├── cover.svg
+│   ├── workflow.svg
+│   └── fonts/
+│       ├── NotoSerifSC-Regular.otf
+│       └── PTSerif-Regular.ttf
+└── snippets/
+    └── example.ts
+```
+
+图片和字体放 `assets/`，要嵌入的代码片段放 `snippets/`。文档变长后，可以把章节拆到 `chapters/`：
+
+```markdown
+.include {chapters/introduction.qd}
+.include {chapters/layout.qd}
+.include {chapters/export.qd}
+```
+
+:::note
+资源放在项目目录里，权限问题最少。读取项目内部文件比读取系统其他路径稳定得多。
+:::
+
+## 元信息：让文档知道自己是谁
+
+`main.qd` 开头建议这样写：
+
+```markdown
+.docname {Quarkdown Complete Guide}
+.docdescription {A practical guide to writing polished documents with Quarkdown.}
+.docauthor {itworksig}
+.dockeywords
+    - quarkdown
+    - markdown
+    - pdf
+    - typesetting
+.doctype {paged}
+.doclang {zh}
+```
+
+最关键的一行通常是 `.doctype`：
+
+| 类型 | 场景 |
+|---|---|
+| `plain` | 普通网页文章 |
+| `paged` | PDF、论文、讲义 |
+| `slides` | 演示文稿 |
+| `docs` | 文档站 |
+
+如果要封面、页码、目录和 PDF，选择：
+
+```markdown
+.doctype {paged}
+```
+
+## 封面页
+
+最稳的封面方式是手工排第一页：放图、标题、副标题、作者、日期，然后分页。
+
+```markdown
+.center
+    !(55%)[Cover artwork](assets/cover.svg)
+
+.center
+    #! Quarkdown Complete Guide
+
+.center
+    From readable Markdown to printable PDF
+
+.center
+    **Author:** .docauthor
+
+.pagebreak
+```
+
+`#!` 是装饰性标题，看起来像标题，但不进入编号和目录。封面正适合这样做。
+
+## 页面、页边距、页眉和页脚
+
+A4 页面：
+
+```markdown
+.pageformat size:{A4} margin:{2.2cm}
+```
+
+双面打印时可以做镜像页边距：
+
+```markdown
+.pageformat side:{left} margin:{2.2cm 2.6cm 2.2cm 1.8cm}
+.pageformat side:{right} margin:{2.2cm 1.8cm 2.2cm 2.6cm}
+```
+
+顺序是上、右、下、左。内侧边距更宽，方便装订。
+
+页眉页脚：
+
+```markdown
+.pagemargin {topcenter}
+    .lastheading depth:{1}
+
+.pagemargin {bottomcenter}
+    .currentpage / .totalpages
+
+.pagemargin {bottomright}
+    .docauthor
+```
+
+这样顶部显示当前一级章节，底部显示页码，右下角显示作者。
+
+## 目录和编号
+
+长文需要结构：
+
+```markdown
+.numbering
+    - headings: 1.1.1
+    - figures: 1.1
+    - tables: 1.1
+    - equations: 1.1
+    - code: 1.1
+
+.tableofcontents title:{目录} maxdepth:{3}
+```
+
+也可以让目录页用罗马数字，正文重新从 1 开始：
+
+```markdown
+.formatpagenumber {i}
+.tableofcontents title:{目录}
+
+.pagebreak
+.resetpagenumber start:{1}
+.formatpagenumber {1}
+```
+
+这个细节会让 PDF 更像一本正式的小册子。
+
+## 图片、图注和交叉引用
+
+Quarkdown 增强了 Markdown 图片语法：
+
+```markdown
+!(80%)[Workflow diagram](assets/workflow.svg "From source to output") {#workflow}
+```
+
+含义：
+
+| 部分 | 含义 |
+|---|---|
+| `!(80%)` | 图片宽度 |
+| `[Workflow diagram]` | 替代文字 |
+| `(assets/workflow.svg "From source to output")` | 路径和图注 |
+| `{#workflow}` | 引用 ID |
+
+后文引用：
+
+```markdown
+如图 .ref {workflow} 所示，编译器位于源文件和输出之间。
+```
+
+## 有线条的表格
+
+Markdown 表格很好写：
+
+```markdown
+| Feature | Function | Purpose |
+|---|---|---|
+| Metadata | `.docname` | Document title |
+| Layout | `.pageformat` | Page size and margins |
+| Export | `--pdf` | PDF output |
+"Core Quarkdown features" {#core-features}
+```
+
+如果默认表格太素，用 CSS 加线条：
+
+```markdown
+.css
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  table th,
+  table td {
+    border: 1px solid #cbd5e1;
+    padding: 8px 10px;
+    vertical-align: top;
+  }
+
+  table th {
+    background: #eff6ff;
+    font-weight: 700;
+  }
+
+  table tbody tr:nth-child(even) {
+    background: #f8fafc;
+  }
+```
+
+核心是 `border-collapse: collapse`，它能避免表格出现双线。
+
+## highlight.js 风格代码框
+
+Quarkdown 的 HTML 输出可以加载 highlight.js。代码块美化分两层：外框和 token 颜色。
+
+代码框外观：
+
+```markdown
+.css
+  figure:has(pre),
+  pre {
+    border: 1px solid #d0d7de;
+    border-radius: 9px;
+    background: #f6f8fa;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.10);
+    overflow: hidden;
+  }
+
+  pre {
+    padding: 16px 18px;
+    line-height: 1.58;
+    font-size: 0.88em;
+  }
+```
+
+语法高亮 token：
+
+```markdown
+.css
+  .hljs-comment {
+    color: #6e7781;
+    font-style: italic;
+  }
+
+  .hljs-keyword {
+    color: #cf222e;
+    font-weight: 650;
+  }
+
+  .hljs-string {
+    color: #116329;
+  }
+
+  .hljs-number,
+  .hljs-literal {
+    color: #953800;
+  }
+
+  .hljs-title.function_ {
+    color: #8250df;
+    font-weight: 650;
+  }
+```
+
+正常写代码：
+
+```typescript
+interface DocumentConfig {
+  title: string;
+  author: string;
+  exportPdf: boolean;
+}
+
+function compile(config: DocumentConfig) {
+  if (config.exportPdf) {
+    return `Building PDF for ${config.title}`;
+  }
+  return `Building HTML for ${config.title}`;
+}
+```
+
+记住：`pre` 管代码框，`.hljs-*` 管颜色。
+
+## 不再灰扑扑的提示框
+
+盒子写法：
+
+```markdown
+.box {Careful} type:{warning}
+    Do not put generated files inside the output directory.
+```
+
+如果默认都是灰色，可以按类型上色：
+
+```markdown
+.css
+  .box {
+    border: 1px solid #cbd5e1;
+    border-left-width: 6px;
+    border-radius: 10px;
+    background: #ffffff;
+  }
+
+  .box.tip {
+    border-color: #14b8a6;
+    background: #f0fdfa;
+  }
+
+  .box.note {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+
+  .box.warning {
+    border-color: #f59e0b;
+    background: #fffbeb;
+  }
+
+  .box.error {
+    border-color: #ef4444;
+    background: #fef2f2;
+  }
+```
+
+:::tip
+颜色要有语义：绿色代表建议，蓝色代表说明，黄色代表注意，红色代表错误。这种朴素的约定很好，因为读者不用学习。
+:::
+
+## 中文、俄语和混排字体
+
+`.font` 设置全局字体：
+
+```markdown
+.font {PingFang SC}
+.font {PT Serif}
+.font {Times New Roman} heading:{Times New Roman} size:{11pt}
+```
+
+多次调用会形成 fallback。中俄混排时这很重要：英文字体不一定有中文字形，中文字体也不一定适合俄文正文。
+
+更精确的语言控制用 `.css`：
+
+```markdown
+.css
+  :lang(zh), .font-zh {
+    font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  }
+
+  :lang(ru), .font-ru {
+    font-family: "PT Serif", "Times New Roman", "Georgia", serif;
+  }
+```
+
+整段指定：
+
+```markdown
+.container classname:{font-zh}
+    这是一段中文，使用中文字体。
+
+.container classname:{font-ru}
+    Это русский абзац, использующий русский шрифт.
+```
+
+行内混排可以用 `.html`：
+
+```markdown
+.html
+    <p>
+      <span lang="zh">“注意力机制”可以翻译为</span>
+      <span lang="ru">«механизм внимания»</span>
+      <span lang="zh">。</span>
+    </p>
+```
+
+不要直接把 `<style>` 放在文档顶层。要用 `.css`。如果要原生 HTML，用 `.html` 明确告诉 Quarkdown。
+
+## 常见坑
+
+| 问题 | 解决 |
+|---|---|
+| `<style>` 出现在 PDF 正文里 | 用 `.css` |
+| HTML 被当成文本 | 用 `.html` 或 `.container` |
+| 代码示例里的 `.include` 被执行 | 示例用 fenced code block |
+| 表格没有线 | 给 `table th, table td` 加 `border` |
+| 盒子全是灰色 | 覆盖 `.box.tip`、`.box.note`、`.box.warning`、`.box.error` |
+| `.font code:{SFMono-Regular}` 报错 | 代码字体用 CSS 控制 |
+
+最后一点很隐蔽：`.font` 很适合文档字体，但代码字体通常用 CSS 更稳。
+
+## 一个最小模板
+
+```markdown
+.docname {My Quarkdown Document}
+.docauthor {itworksig}
+.doctype {paged}
+.doclang {zh}
+.theme {paperwhite} layout:{latex}
+
+.font {PingFang SC}
+.font {PT Serif}
+.font {Times New Roman} heading:{Times New Roman} size:{11pt}
+
+.css
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  table th,
+  table td {
+    border: 1px solid #cbd5e1;
+    padding: 8px 10px;
+  }
+
+  pre {
+    border: 1px solid #d0d7de;
+    border-radius: 9px;
+    background: #f6f8fa;
+    padding: 16px 18px;
+  }
+
+.pageformat size:{A4} margin:{2.2cm}
+
+.pagemargin {bottomcenter}
+    .currentpage / .totalpages
+
+.numbering
+    - headings: 1.1.1
+    - figures: 1.1
+    - tables: 1.1
+    - code: 1.1
+
+.center
+    #! My Quarkdown Document
+
+.pagebreak
+.tableofcontents title:{目录}
+.pagebreak
+
+# Introduction
+
+Start writing here.
+```
+
+## 结语
+
+Quarkdown 最有价值的地方，是它让你把文档当成一个小型程序来写：正文仍然可读，布局可以声明，输出能达到正式 PDF 或技术手册的质量。
+
+学习它最好的方法不是背函数，而是做一份真实文档：封面、页码、目录、图片、表格、代码块、提示框、字体和 PDF 导出。跑通之后，其他函数自然就会变得有意义。

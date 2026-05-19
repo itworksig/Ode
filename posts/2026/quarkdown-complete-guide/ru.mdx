@@ -1,0 +1,489 @@
+---
+title: "Quarkdown: практическое руководство по красивым техническим документам"
+date: 2026-05-19
+category: Guide
+eyebrow: Инженерия документов
+summary: "Подробное практическое руководство по Quarkdown: структура проекта, метаданные, обложка, нумерация страниц, оглавление, изображения, подсветка кода, блоки-подсказки, шрифты, смешанная типографика и экспорт в PDF."
+featured: true
+lang: ru
+tags: [quarkdown, markdown, pdf, documentation, typesetting]
+---
+
+Quarkdown занимает удобное место между обычным Markdown и полноценной издательской системой. Исходный файл остается читаемым, но вы получаете функции для метаданных, страниц, перекрестных ссылок, блоков кода, предупреждений, макета, шрифтов и экспорта в PDF.
+
+Если вам нравится писать в Markdown, но нужен результат уровня методички, технического руководства или аккуратного PDF-отчета, Quarkdown стоит изучить.
+
+![Рабочий процесс Quarkdown](/images/quarkdown-complete-guide.svg)
+
+> *Рисунок 1 — Практический процесс: написать читаемый исходный файл, скомпилировать его и опубликовать как HTML, PDF, слайды или документацию.*
+
+Это руководство не пытается перечислить все функции. Оно строит рабочую модель: что оставить Markdown, что поручить функциям Quarkdown, а где лучше использовать CSS.
+
+:::tip
+Если вы уже знаете Markdown, вы уже знаете базовый слой Quarkdown. Новая часть — понять, когда добавлять `.docname`, `.doctype`, `.tableofcontents`, `.pageformat`, `.box`, `.code`, `.font` и `.css`.
+:::
+
+## Для чего хорош Quarkdown
+
+Quarkdown — это не просто рендерер Markdown. Его удобнее воспринимать как компилятор документов: вы пишете `.qd`, затем компилируете его в нужный формат.
+
+Он хорошо подходит для:
+
+- PDF-методичек
+- конспектов лекций
+- технических руководств
+- внутренних инженерных документов
+- исследовательских заметок
+- сайтов документации
+- слайдов
+- длинных статей с формулами, таблицами и кодом
+
+Главное отличие от обычного Markdown в том, что сам документ может описывать свое поведение: формат A4, поля, текущая глава в колонтитуле, автоматическая нумерация рисунков и таблиц, отдельная нумерация после оглавления, стек шрифтов и экспорт в PDF.
+
+Иначе говоря, Markdown пишет текст, а Quarkdown управляет документной системой вокруг текста.
+
+## Базовый рабочий процесс
+
+Минимальный старт:
+
+```bash
+quarkdown create my-doc
+cd my-doc
+quarkdown c main.qd
+```
+
+Во время реального письма чаще всего нужна команда:
+
+```bash
+quarkdown c main.qd -p -w
+```
+
+`-p` открывает предпросмотр, `-w` следит за изменениями. Для PDF:
+
+```bash
+quarkdown c main.qd --pdf
+```
+
+Для шаблонов полезен строгий режим:
+
+```bash
+quarkdown c main.qd --strict
+```
+
+Он помогает поймать ошибки функций до того, как они попадут в готовый документ.
+
+## Структура проекта
+
+Хорошая структура быстро окупается:
+
+```text
+my-quarkdown-book/
+├── main.qd
+├── assets/
+│   ├── cover.svg
+│   ├── workflow.svg
+│   └── fonts/
+│       ├── NotoSerifSC-Regular.otf
+│       └── PTSerif-Regular.ttf
+└── snippets/
+    └── example.ts
+```
+
+Изображения и шрифты храните в `assets/`, кодовые фрагменты — в `snippets/`. Большой документ можно разбить на главы:
+
+```markdown
+.include {chapters/introduction.qd}
+.include {chapters/layout.qd}
+.include {chapters/export.qd}
+```
+
+:::note
+Ресурсы внутри проекта проще для Quarkdown: меньше вопросов с правами доступа и переносимостью.
+:::
+
+## Метаданные документа
+
+Начало `main.qd` может выглядеть так:
+
+```markdown
+.docname {Quarkdown Complete Guide}
+.docdescription {A practical guide to writing polished documents with Quarkdown.}
+.docauthor {itworksig}
+.dockeywords
+    - quarkdown
+    - markdown
+    - pdf
+    - typesetting
+.doctype {paged}
+.doclang {ru}
+```
+
+Ключевая строка — `.doctype`:
+
+| Тип | Когда использовать |
+|---|---|
+| `plain` | обычная веб-статья |
+| `paged` | PDF, доклад, методичка |
+| `slides` | презентация |
+| `docs` | сайт документации |
+
+Для обложки, оглавления и страниц обычно нужен:
+
+```markdown
+.doctype {paged}
+```
+
+## Обложка
+
+Надежнее всего сделать первую страницу вручную:
+
+```markdown
+.center
+    !(55%)[Cover artwork](assets/cover.svg)
+
+.center
+    #! Quarkdown Complete Guide
+
+.center
+    From readable Markdown to printable PDF
+
+.center
+    **Author:** .docauthor
+
+.pagebreak
+```
+
+`#!` — декоративный заголовок. Он выглядит как заголовок, но не попадает в нумерацию и оглавление.
+
+## Страницы, поля и колонтитулы
+
+Формат A4:
+
+```markdown
+.pageformat size:{A4} margin:{2.2cm}
+```
+
+Зеркальные поля для двусторонней печати:
+
+```markdown
+.pageformat side:{left} margin:{2.2cm 2.6cm 2.2cm 1.8cm}
+.pageformat side:{right} margin:{2.2cm 1.8cm 2.2cm 2.6cm}
+```
+
+Колонтитулы:
+
+```markdown
+.pagemargin {topcenter}
+    .lastheading depth:{1}
+
+.pagemargin {bottomcenter}
+    .currentpage / .totalpages
+
+.pagemargin {bottomright}
+    .docauthor
+```
+
+Так сверху будет текущий раздел, снизу номер страницы, справа автор.
+
+## Оглавление и нумерация
+
+```markdown
+.numbering
+    - headings: 1.1.1
+    - figures: 1.1
+    - tables: 1.1
+    - equations: 1.1
+    - code: 1.1
+
+.tableofcontents title:{Оглавление} maxdepth:{3}
+```
+
+Можно использовать римские номера для вводной части и начать основной текст с 1:
+
+```markdown
+.formatpagenumber {i}
+.tableofcontents title:{Оглавление}
+
+.pagebreak
+.resetpagenumber start:{1}
+.formatpagenumber {1}
+```
+
+## Изображения и ссылки на них
+
+```markdown
+!(80%)[Workflow diagram](assets/workflow.svg "From source to output") {#workflow}
+```
+
+Затем:
+
+```markdown
+Как показано на рисунке .ref {workflow}, компилятор находится между исходником и результатом.
+```
+
+Это дает удобные перекрестные ссылки без тяжелого LaTeX-синтаксиса.
+
+## Таблицы с линиями
+
+Markdown-таблица:
+
+```markdown
+| Feature | Function | Purpose |
+|---|---|---|
+| Metadata | `.docname` | Document title |
+| Layout | `.pageformat` | Page size and margins |
+| Export | `--pdf` | PDF output |
+"Core Quarkdown features" {#core-features}
+```
+
+Чтобы добавить линии:
+
+```markdown
+.css
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  table th,
+  table td {
+    border: 1px solid #cbd5e1;
+    padding: 8px 10px;
+    vertical-align: top;
+  }
+
+  table th {
+    background: #eff6ff;
+    font-weight: 700;
+  }
+```
+
+`border-collapse: collapse` — главный трюк против двойных границ.
+
+## Код в стиле highlight.js
+
+Quarkdown может использовать highlight.js. Визуально есть два уровня: рамка и цвета токенов.
+
+Рамка:
+
+```markdown
+.css
+  figure:has(pre),
+  pre {
+    border: 1px solid #d0d7de;
+    border-radius: 9px;
+    background: #f6f8fa;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.10);
+    overflow: hidden;
+  }
+
+  pre {
+    padding: 16px 18px;
+    line-height: 1.58;
+    font-size: 0.88em;
+  }
+```
+
+Цвета:
+
+```markdown
+.css
+  .hljs-comment {
+    color: #6e7781;
+    font-style: italic;
+  }
+
+  .hljs-keyword {
+    color: #cf222e;
+    font-weight: 650;
+  }
+
+  .hljs-string {
+    color: #116329;
+  }
+
+  .hljs-title.function_ {
+    color: #8250df;
+    font-weight: 650;
+  }
+```
+
+Пример:
+
+```typescript
+interface DocumentConfig {
+  title: string;
+  author: string;
+  exportPdf: boolean;
+}
+
+function compile(config: DocumentConfig) {
+  if (config.exportPdf) {
+    return `Building PDF for ${config.title}`;
+  }
+  return `Building HTML for ${config.title}`;
+}
+```
+
+`pre` отвечает за блок, `.hljs-*` — за подсветку.
+
+## Цветные блоки заметок
+
+```markdown
+.box {Careful} type:{warning}
+    Do not put generated files inside the output directory.
+```
+
+Стили:
+
+```markdown
+.css
+  .box {
+    border: 1px solid #cbd5e1;
+    border-left-width: 6px;
+    border-radius: 10px;
+    background: #ffffff;
+  }
+
+  .box.tip {
+    border-color: #14b8a6;
+    background: #f0fdfa;
+  }
+
+  .box.note {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+
+  .box.warning {
+    border-color: #f59e0b;
+    background: #fffbeb;
+  }
+
+  .box.error {
+    border-color: #ef4444;
+    background: #fef2f2;
+  }
+```
+
+:::tip
+Цвет должен означать действие: зеленый — совет, синий — заметка, желтый — осторожно, красный — ошибка.
+:::
+
+## Шрифты для китайского, русского и смешанного текста
+
+```markdown
+.font {PingFang SC}
+.font {PT Serif}
+.font {Times New Roman} heading:{Times New Roman} size:{11pt}
+```
+
+Несколько вызовов создают fallback-стек. Это важно для смешанных письменностей.
+
+Точный контроль:
+
+```markdown
+.css
+  :lang(zh), .font-zh {
+    font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  }
+
+  :lang(ru), .font-ru {
+    font-family: "PT Serif", "Times New Roman", "Georgia", serif;
+  }
+```
+
+Блоки:
+
+```markdown
+.container classname:{font-zh}
+    这是一段中文，使用中文字体。
+
+.container classname:{font-ru}
+    Это русский абзац, использующий русский шрифт.
+```
+
+Для строчного смешения:
+
+```markdown
+.html
+    <p>
+      <span lang="zh">“注意力机制” можно перевести как</span>
+      <span lang="ru">«механизм внимания»</span>
+      <span lang="zh">。</span>
+    </p>
+```
+
+Не пишите `<style>` прямо в начале документа. Используйте `.css`. Для HTML используйте `.html`.
+
+## Частые ошибки
+
+| Ошибка | Исправление |
+|---|---|
+| `<style>` появился в PDF как текст | Используйте `.css` |
+| HTML стал обычным текстом | Используйте `.html` или `.container` |
+| `.include` внутри примера выполнился | Показывайте примеры в fenced code block |
+| У таблиц нет линий | Добавьте `border` для `table th, table td` |
+| Все блоки серые | Стилизуйте `.box.tip`, `.box.note`, `.box.warning`, `.box.error` |
+| `.font code:{SFMono-Regular}` падает | Шрифт кода задавайте через CSS |
+
+## Минимальный шаблон
+
+```markdown
+.docname {My Quarkdown Document}
+.docauthor {itworksig}
+.doctype {paged}
+.doclang {ru}
+.theme {paperwhite} layout:{latex}
+
+.font {PingFang SC}
+.font {PT Serif}
+.font {Times New Roman} heading:{Times New Roman} size:{11pt}
+
+.css
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  table th,
+  table td {
+    border: 1px solid #cbd5e1;
+    padding: 8px 10px;
+  }
+
+  pre {
+    border: 1px solid #d0d7de;
+    border-radius: 9px;
+    background: #f6f8fa;
+    padding: 16px 18px;
+  }
+
+.pageformat size:{A4} margin:{2.2cm}
+
+.pagemargin {bottomcenter}
+    .currentpage / .totalpages
+
+.numbering
+    - headings: 1.1.1
+    - figures: 1.1
+    - tables: 1.1
+    - code: 1.1
+
+.center
+    #! My Quarkdown Document
+
+.pagebreak
+.tableofcontents title:{Оглавление}
+.pagebreak
+
+# Introduction
+
+Start writing here.
+```
+
+## Итог
+
+Quarkdown становится особенно полезным, когда вы воспринимаете его не как “Markdown с добавками”, а как маленькую среду программирования документов. Текст остается читаемым, макет описывается декларативно, а результат может быть достаточно серьезным для PDF-методички, технического руководства или внутреннего отчета.
+
+Лучший способ выучить Quarkdown — собрать один настоящий документ: обложка, страницы, оглавление, изображение, таблица, код, подсказки, шрифты и PDF-экспорт.
