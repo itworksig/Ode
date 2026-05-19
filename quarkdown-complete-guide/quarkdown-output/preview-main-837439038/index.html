@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta name="generator" content="Quarkdown">
+    <meta charset="UTF-8">
+    <meta name="description" content="一份面向初学者的 Quarkdown 长文模板，演示封面、页码、目录、图片、表格、公式、代码、布局和函数。">
+    <meta name="keywords" content="quarkdown, markdown, pdf, typesetting">
+    <meta name="author" content="itworksig">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="quarkdown:root-path" content=".">
+    <title>Quarkdown 完整功能写作手册</title>
+    <script src="./script/quarkdown.min.js"></script>
+    <script>const capabilities = window.quarkdownCapabilities</script>
+    <script>window.texMacros = {}</script>
+    <link href="./lib/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="./lib/highlight.js/highlightjs.min.js"></script>
+    <script src="./lib/highlightjs-line-numbers/highlightjs-line-numbers.min.js"></script>
+    <script src="./lib/highlightjs-copy/highlightjs-copy.min.js"></script>
+    <link href="./lib/highlightjs-copy/highlightjs-copy.min.css" rel="stylesheet">
+    <script>capabilities.code = true;</script>
+    <link href="./lib/katex/katex.min.css" rel="stylesheet">
+    <script src="./lib/katex/katex.min.js" defer="true"></script>
+    <script>capabilities.math = true;</script>
+    <script src="./lib/mermaid/mermaid.min.js"></script>
+    <script>capabilities.mermaid = true;</script>
+    <script>window.PagedConfig = {auto: false};</script>
+    <script src="./lib/pagedjs/paged.polyfill.js"></script>
+    <link href="./theme/theme.css" rel="stylesheet">
+    <style>@font-face { font-family: '1565505610'; src: local('PingFang SC'); }
+@font-face { font-family: '222678081'; src: local('PT Serif'); }
+@font-face { font-family: '499763907'; src: local('Times New Roman'); }
+@font-face { font-family: '499763907'; src: local('Times New Roman'); }
+
+body {
+    --qd-main-custom-font: '499763907', '222678081', '1565505610';
+    --qd-heading-custom-font: '499763907';
+    --qd-main-font-size: 11.0pt;}
+
+body {
+    --qd-content-width: 210.0mm;
+    --qd-column-count: 1;}
+
+body.quarkdown-plain.quarkdown-plain,
+body.quarkdown-docs.quarkdown-docs {
+    margin: 2.2cm 2.2cm 2.2cm 2.2cm;}
+
+body.quarkdown-slides.quarkdown-slides .reveal {
+    width: 210.0mm;
+    height: 297.0mm;}
+
+@page {
+    size: 210.0mm 297.0mm;
+    margin: 2.2cm 2.2cm 2.2cm 2.2cm;}
+@page:left {
+    margin: 2.2cm 2.6cm 2.2cm 1.8cm;}
+@page:right {
+    margin: 2.2cm 1.8cm 2.2cm 2.6cm;}
+</style>
+    <script>prepare(new PagedDocument());</script>
+<template id="sidebar-template"><nav class="sidebar" role="doc-toc"><ol><li data-target-id="mental-model" data-depth="1" data-location="1"><a href="#mental-model">快速心智模型</a><ol><li data-target-id="最常用命令" data-depth="2" data-location="1.1"><a href="#最常用命令">最常用命令</a></li><li data-target-id="一个最小文件" data-depth="2" data-location="1.2"><a href="#一个最小文件">一个最小文件</a></li></ol></li><li data-target-id="文档元信息" data-depth="1" data-location="2"><a href="#文档元信息">文档元信息</a><ol><li data-target-id="标题作者关键词" data-depth="2" data-location="2.1"><a href="#标题作者关键词">标题、作者、关键词</a></li><li data-target-id="文档类型" data-depth="2" data-location="2.2"><a href="#文档类型">文档类型</a></li></ol></li><li data-target-id="封面分页和页码" data-depth="1" data-location="3"><a href="#封面分页和页码">封面、分页和页码</a><ol><li data-target-id="手工封面" data-depth="2" data-location="3.1"><a href="#手工封面">手工封面</a></li><li data-target-id="页面尺寸和页边距" data-depth="2" data-location="3.2"><a href="#页面尺寸和页边距">页面尺寸和页边距</a></li><li data-target-id="页眉和页脚" data-depth="2" data-location="3.3"><a href="#页眉和页脚">页眉和页脚</a></li><li data-target-id="罗马页码和正文页码" data-depth="2" data-location="3.4"><a href="#罗马页码和正文页码">罗马页码和正文页码</a></li></ol></li><li data-target-id="目录和编号" data-depth="1" data-location="4"><a href="#目录和编号">目录和编号</a><ol><li data-target-id="目录" data-depth="2" data-location="4.1"><a href="#目录">目录</a></li><li data-target-id="编号" data-depth="2" data-location="4.2"><a href="#编号">编号</a></li><li data-target-id="装饰性标题" data-depth="2" data-location="4.3"><a href="#装饰性标题">装饰性标题</a></li></ol></li><li data-target-id="markdown-基础" data-depth="1" data-location="5"><a href="#markdown-基础">Markdown 基础</a><ol><li data-target-id="强调删除线链接" data-depth="2" data-location="5.1"><a href="#强调删除线链接">强调、删除线、链接</a></li><li data-target-id="列表" data-depth="2" data-location="5.2"><a href="#列表">列表</a></li><li data-target-id="引用和脚注" data-depth="2" data-location="5.3"><a href="#引用和脚注">引用和脚注</a></li></ol></li><li data-target-id="图片图注和交叉引用" data-depth="1" data-location="6"><a href="#图片图注和交叉引用">图片、图注和交叉引用</a><ol><li data-target-id="普通图片" data-depth="2" data-location="6.1"><a href="#普通图片">普通图片</a></li><li data-target-id="图注和引用" data-depth="2" data-location="6.2"><a href="#图注和引用">图注和引用</a></li><li data-target-id="图片尺寸单位" data-depth="2" data-location="6.3"><a href="#图片尺寸单位">图片尺寸单位</a></li></ol></li><li data-target-id="表格" data-depth="1" data-location="7"><a href="#表格">表格</a><ol><li data-target-id="基础表格" data-depth="2" data-location="7.1"><a href="#基础表格">基础表格</a></li><li data-target-id="表格写法" data-depth="2" data-location="7.2"><a href="#表格写法">表格写法</a></li><li data-target-id="表格线条和斑马纹" data-depth="2" data-location="7.3"><a href="#表格线条和斑马纹">表格线条和斑马纹</a></li></ol></li><li data-target-id="公式" data-depth="1" data-location="8"><a href="#公式">公式</a><ol><li data-target-id="行内和块级公式" data-depth="2" data-location="8.1"><a href="#行内和块级公式">行内和块级公式</a></li><li data-target-id="多行公式" data-depth="2" data-location="8.2"><a href="#多行公式">多行公式</a></li></ol></li><li data-target-id="代码块" data-depth="1" data-location="9"><a href="#代码块">代码块</a><ol><li data-target-id="普通代码块" data-depth="2" data-location="9.1"><a href="#普通代码块">普通代码块</a></li><li data-target-id="code-函数" data-depth="2" data-location="9.2"><a href="#code-函数">.code 函数</a></li><li data-target-id="美化代码框" data-depth="2" data-location="9.3"><a href="#美化代码框">美化代码框</a></li></ol></li><li data-target-id="盒子提示和警告" data-depth="1" data-location="10"><a href="#盒子提示和警告">盒子、提示和警告</a><ol><li data-target-id="给不同盒子上色" data-depth="2" data-location="10.1"><a href="#给不同盒子上色">给不同盒子上色</a></li></ol></li><li data-target-id="布局函数" data-depth="1" data-location="11"><a href="#布局函数">布局函数</a><ol><li data-target-id="居中和对齐" data-depth="2" data-location="11.1"><a href="#居中和对齐">居中和对齐</a></li><li data-target-id="横向排列row" data-depth="2" data-location="11.2"><a href="#横向排列row">横向排列：.row</a></li><li data-target-id="网格grid" data-depth="2" data-location="11.3"><a href="#网格grid">网格：.grid</a></li><li data-target-id="浮动float" data-depth="2" data-location="11.4"><a href="#浮动float">浮动：.float</a></li><li data-target-id="多栏页面" data-depth="2" data-location="11.5"><a href="#多栏页面">多栏页面</a></li></ol></li><li data-target-id="多栏排版演示" data-depth="1" data-location="12"><a href="#多栏排版演示">多栏排版演示</a></li><li data-target-id="mermaid-图表" data-depth="1" data-location="13"><a href="#mermaid-图表">Mermaid 图表</a></li><li data-target-id="变量和函数" data-depth="1" data-location="14"><a href="#变量和函数">变量和函数</a><ol><li data-target-id="调用函数" data-depth="2" data-location="14.1"><a href="#调用函数">调用函数</a></li><li data-target-id="变量" data-depth="2" data-location="14.2"><a href="#变量">变量</a></li><li data-target-id="自定义函数" data-depth="2" data-location="14.3"><a href="#自定义函数">自定义函数</a></li><li data-target-id="可选参数" data-depth="2" data-location="14.4"><a href="#可选参数">可选参数</a></li><li data-target-id="条件判断" data-depth="2" data-location="14.5"><a href="#条件判断">条件判断</a></li><li data-target-id="循环和数据" data-depth="2" data-location="14.6"><a href="#循环和数据">循环和数据</a></li></ol></li><li data-target-id="文件读取和外部资源" data-depth="1" data-location="15"><a href="#文件读取和外部资源">文件读取和外部资源</a><ol><li data-target-id="读取文本文件" data-depth="2" data-location="15.1"><a href="#读取文本文件">读取文本文件</a></li><li data-target-id="权限提示" data-depth="2" data-location="15.2"><a href="#权限提示">权限提示</a></li></ol></li><li data-target-id="htmlcss-和原生内容" data-depth="1" data-location="16"><a href="#htmlcss-和原生内容">HTML、CSS 和原生内容</a><ol><li data-target-id="html-示例" data-depth="2" data-location="16.1"><a href="#html-示例">HTML 示例</a></li><li data-target-id="什么时候用-css" data-depth="2" data-location="16.2"><a href="#什么时候用-css">什么时候用 CSS</a></li></ol></li><li data-target-id="字体设置中文俄语和混排" data-depth="1" data-location="17"><a href="#字体设置中文俄语和混排">字体设置：中文、俄语和混排</a><ol><li data-target-id="全局字体" data-depth="2" data-location="17.1"><a href="#全局字体">全局字体</a></li><li data-target-id="推荐字体组合" data-depth="2" data-location="17.2"><a href="#推荐字体组合">推荐字体组合</a></li><li data-target-id="按语言自动指定字体" data-depth="2" data-location="17.3"><a href="#按语言自动指定字体">按语言自动指定字体</a></li><li data-target-id="用-class-精确指定中文字体" data-depth="2" data-location="17.4"><a href="#用-class-精确指定中文字体">用 class 精确指定中文字体</a></li><li data-target-id="用-class-精确指定俄语字体" data-depth="2" data-location="17.5"><a href="#用-class-精确指定俄语字体">用 class 精确指定俄语字体</a></li><li data-target-id="中文俄语混用示例" data-depth="2" data-location="17.6"><a href="#中文俄语混用示例">中文俄语混用示例</a></li><li data-target-id="用-quarkdown-函数封装字体" data-depth="2" data-location="17.7"><a href="#用-quarkdown-函数封装字体">用 Quarkdown 函数封装字体</a></li><li data-target-id="使用本地字体文件" data-depth="2" data-location="17.8"><a href="#使用本地字体文件">使用本地字体文件</a></li><li data-target-id="字体排错清单" data-depth="2" data-location="17.9"><a href="#字体排错清单">字体排错清单</a></li><li data-target-id="quarkdown-里的字体边界" data-depth="2" data-location="17.10"><a href="#quarkdown-里的字体边界">Quarkdown 里的字体边界</a></li></ol></li><li data-target-id="多文件项目" data-depth="1" data-location="18"><a href="#多文件项目">多文件项目</a><ol><li data-target-id="include" data-depth="2" data-location="18.1"><a href="#include">include</a></li><li data-target-id="推荐目录结构" data-depth="2" data-location="18.2"><a href="#推荐目录结构">推荐目录结构</a></li></ol></li><li data-target-id="调试和编译" data-depth="1" data-location="19"><a href="#调试和编译">调试和编译</a><ol><li data-target-id="实时预览" data-depth="2" data-location="19.1"><a href="#实时预览">实时预览</a></li><li data-target-id="导出-pdf" data-depth="2" data-location="19.2"><a href="#导出-pdf">导出 PDF</a></li><li data-target-id="严格模式" data-depth="2" data-location="19.3"><a href="#严格模式">严格模式</a></li><li data-target-id="清理输出目录" data-depth="2" data-location="19.4"><a href="#清理输出目录">清理输出目录</a></li></ol></li><li data-target-id="常见写作套路" data-depth="1" data-location="20"><a href="#常见写作套路">常见写作套路</a><ol><li data-target-id="讲义模板" data-depth="2" data-location="20.1"><a href="#讲义模板">讲义模板</a></li><li data-target-id="技术文章模板" data-depth="2" data-location="20.2"><a href="#技术文章模板">技术文章模板</a></li><li data-target-id="pdf-报告模板" data-depth="2" data-location="20.3"><a href="#pdf-报告模板">PDF 报告模板</a></li></ol></li><li data-target-id="函数速查" data-depth="1" data-location="21"><a href="#函数速查">函数速查</a></li><li data-target-id="结语" data-depth="1" data-location="22"><a href="#结语">结语</a></li></ol></nav>
+</template>  </head>
+  <body class="quarkdown quarkdown-paged multicolumn">
+    <div class="paged-content-wrapper"><style data-hidden="">:lang(zh), .font-zh {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif !important;
+}
+
+:lang(ru), .font-ru {
+  font-family: "PT Serif", "Times New Roman", "Georgia", serif !important;
+}
+
+code, pre, .font-mono {
+  font-family: "SFMono-Regular", "JetBrains Mono", "Menlo", "Consolas", monospace !important;
+}
+
+figure:has(pre),
+pre {
+  border: 1px solid #d0d7de !important;
+  border-radius: 9px !important;
+  background: #f6f8fa !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.10) !important;
+  overflow: hidden !important;
+}
+
+pre {
+  padding: 16px 18px !important;
+  line-height: 1.58 !important;
+  font-size: 0.88em !important;
+  tab-size: 2 !important;
+}
+
+pre code,
+pre code.hljs {
+  background: transparent !important;
+  color: #24292f !important;
+}
+
+figure:has(pre) figcaption {
+  background: #f6f8fa !important;
+  border-top: 1px solid #d0d7de !important;
+  color: #57606a !important;
+  font-size: 0.85em !important;
+  padding: 8px 14px !important;
+}
+
+.hljs {
+  color: #24292f !important;
+  background: transparent !important;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #6e7781 !important;
+  font-style: italic !important;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst {
+  color: #cf222e !important;
+  font-weight: 650 !important;
+}
+
+.hljs-title,
+.hljs-title.function_,
+.hljs-function .hljs-title {
+  color: #8250df !important;
+  font-weight: 650 !important;
+}
+
+.hljs-string,
+.hljs-attr,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+  color: #116329 !important;
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-variable,
+.hljs-template-variable {
+  color: #953800 !important;
+}
+
+.hljs-type,
+.hljs-class .hljs-title {
+  color: #0550ae !important;
+  font-weight: 650 !important;
+}
+
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-meta,
+.hljs-section {
+  color: #0969da !important;
+}
+
+.hljs-deletion {
+  color: #82071e !important;
+  background: #ffebe9 !important;
+}
+
+.hljs-emphasis {
+  font-style: italic !important;
+}
+
+.hljs-strong {
+  font-weight: 700 !important;
+}
+
+.hljs-ln-numbers {
+  color: #8c959f !important;
+  border-right: 1px solid #d8dee4 !important;
+  padding-right: 12px !important;
+  text-align: right !important;
+  user-select: none !important;
+}
+
+.hljs-ln-code {
+  padding-left: 12px !important;
+}
+
+.hljs-copy-button {
+  border: 1px solid #d0d7de !important;
+  border-radius: 6px !important;
+  background: #ffffff !important;
+  color: #57606a !important;
+  font-size: 0.78em !important;
+}
+
+table {
+  border-collapse: collapse !important;
+  width: 100% !important;
+  margin: 1rem 0 !important;
+  font-size: 0.95em !important;
+}
+
+table th,
+table td {
+  border: 1px solid #cbd5e1 !important;
+  padding: 8px 10px !important;
+  vertical-align: top !important;
+}
+
+table th {
+  background: #eff6ff !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+table tbody tr:nth-child(even) {
+  background: #f8fafc !important;
+}
+
+table caption {
+  color: #475569 !important;
+  font-size: 0.9em !important;
+  margin-top: 6px !important;
+}
+
+.box {
+  border: 1px solid #cbd5e1 !important;
+  border-left-width: 6px !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06) !important;
+}
+
+.box header {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35) !important;
+}
+
+.box.tip {
+  border-color: #14b8a6 !important;
+  background: #f0fdfa !important;
+}
+
+.box.note {
+  border-color: #3b82f6 !important;
+  background: #eff6ff !important;
+}
+
+.box.warning {
+  border-color: #f59e0b !important;
+  background: #fffbeb !important;
+}
+
+.box.error {
+  border-color: #ef4444 !important;
+  background: #fef2f2 !important;
+}</style><div class="page-margin-content page-margin-top-center" data-on-left-page="top-center" data-on-right-page="top-center"><span class="last-heading" data-depth="1"></span></div><div class="page-margin-content page-margin-bottom-center" data-on-left-page="bottom-center" data-on-right-page="bottom-center"><p><span class="current-page-number">-</span> / <span class="total-page-number">-</span></p></div><div class="page-margin-content page-margin-bottom-left" data-on-left-page="bottom-left" data-on-right-page="bottom-left"><p>Quarkdown 手册</p></div><div class="page-margin-content page-margin-bottom-right" data-on-left-page="bottom-right" data-on-right-page="bottom-right"><p>itworksig</p></div><div class="container fullwidth" style="justify-items: center; text-align: center;"><figure><img src="media/cover@893836442.svg" alt="Quarkdown 完整功能写作手册封面" style="width: 55.0%;" /></figure></div><div class="container fullwidth" style="justify-items: center; text-align: center;"><h1 id="quarkdown-完整功能写作手册" data-decorative="">Quarkdown 完整功能写作手册</h1></div><div class="container fullwidth" style="justify-items: center; text-align: center;"><p>从 Markdown 到可打印 PDF 的实用模板</p></div><div class="container fullwidth" style="justify-items: center; text-align: center;"><p><strong>作者：</strong> itworksig</p></div><div class="container fullwidth" style="justify-items: center; text-align: center;"><p><strong>日期：</strong> 2026-05-19</p></div><div class="box tip"><header><h4>这份文件怎么用</h4></header><div class="box-content"><p>你可以直接改这份 <span class="codespan-content"><code>main.qd</code></span>。每一节都先解释功能，再给出能复制的写法。运行 <span class="codespan-content"><code>quarkdown c main.qd -p -w</code></span> 可以实时预览，运行 <span class="codespan-content"><code>quarkdown c main.qd --pdf</code></span> 可以导出 PDF。</p></div></div><div class="page-break" data-hidden=""></div><div class="page-number-formatter" data-format="i" data-hidden=""></div><h1 class="page-break" id="table-of-contents">目录</h1><nav role="table-of-contents" data-role="table-of-contents"><ol><li data-target-id="mental-model" data-depth="1" data-location="1"><a href="#mental-model">快速心智模型</a><ol><li data-target-id="最常用命令" data-depth="2" data-location="1.1"><a href="#最常用命令">最常用命令</a></li><li data-target-id="一个最小文件" data-depth="2" data-location="1.2"><a href="#一个最小文件">一个最小文件</a></li></ol></li><li data-target-id="文档元信息" data-depth="1" data-location="2"><a href="#文档元信息">文档元信息</a><ol><li data-target-id="标题作者关键词" data-depth="2" data-location="2.1"><a href="#标题作者关键词">标题、作者、关键词</a></li><li data-target-id="文档类型" data-depth="2" data-location="2.2"><a href="#文档类型">文档类型</a></li></ol></li><li data-target-id="封面分页和页码" data-depth="1" data-location="3"><a href="#封面分页和页码">封面、分页和页码</a><ol><li data-target-id="手工封面" data-depth="2" data-location="3.1"><a href="#手工封面">手工封面</a></li><li data-target-id="页面尺寸和页边距" data-depth="2" data-location="3.2"><a href="#页面尺寸和页边距">页面尺寸和页边距</a></li><li data-target-id="页眉和页脚" data-depth="2" data-location="3.3"><a href="#页眉和页脚">页眉和页脚</a></li><li data-target-id="罗马页码和正文页码" data-depth="2" data-location="3.4"><a href="#罗马页码和正文页码">罗马页码和正文页码</a></li></ol></li><li data-target-id="目录和编号" data-depth="1" data-location="4"><a href="#目录和编号">目录和编号</a><ol><li data-target-id="目录" data-depth="2" data-location="4.1"><a href="#目录">目录</a></li><li data-target-id="编号" data-depth="2" data-location="4.2"><a href="#编号">编号</a></li><li data-target-id="装饰性标题" data-depth="2" data-location="4.3"><a href="#装饰性标题">装饰性标题</a></li></ol></li><li data-target-id="markdown-基础" data-depth="1" data-location="5"><a href="#markdown-基础">Markdown 基础</a><ol><li data-target-id="强调删除线链接" data-depth="2" data-location="5.1"><a href="#强调删除线链接">强调、删除线、链接</a></li><li data-target-id="列表" data-depth="2" data-location="5.2"><a href="#列表">列表</a></li><li data-target-id="引用和脚注" data-depth="2" data-location="5.3"><a href="#引用和脚注">引用和脚注</a></li></ol></li><li data-target-id="图片图注和交叉引用" data-depth="1" data-location="6"><a href="#图片图注和交叉引用">图片、图注和交叉引用</a><ol><li data-target-id="普通图片" data-depth="2" data-location="6.1"><a href="#普通图片">普通图片</a></li><li data-target-id="图注和引用" data-depth="2" data-location="6.2"><a href="#图注和引用">图注和引用</a></li><li data-target-id="图片尺寸单位" data-depth="2" data-location="6.3"><a href="#图片尺寸单位">图片尺寸单位</a></li></ol></li><li data-target-id="表格" data-depth="1" data-location="7"><a href="#表格">表格</a><ol><li data-target-id="基础表格" data-depth="2" data-location="7.1"><a href="#基础表格">基础表格</a></li><li data-target-id="表格写法" data-depth="2" data-location="7.2"><a href="#表格写法">表格写法</a></li><li data-target-id="表格线条和斑马纹" data-depth="2" data-location="7.3"><a href="#表格线条和斑马纹">表格线条和斑马纹</a></li></ol></li><li data-target-id="公式" data-depth="1" data-location="8"><a href="#公式">公式</a><ol><li data-target-id="行内和块级公式" data-depth="2" data-location="8.1"><a href="#行内和块级公式">行内和块级公式</a></li><li data-target-id="多行公式" data-depth="2" data-location="8.2"><a href="#多行公式">多行公式</a></li></ol></li><li data-target-id="代码块" data-depth="1" data-location="9"><a href="#代码块">代码块</a><ol><li data-target-id="普通代码块" data-depth="2" data-location="9.1"><a href="#普通代码块">普通代码块</a></li><li data-target-id="code-函数" data-depth="2" data-location="9.2"><a href="#code-函数">.code 函数</a></li><li data-target-id="美化代码框" data-depth="2" data-location="9.3"><a href="#美化代码框">美化代码框</a></li></ol></li><li data-target-id="盒子提示和警告" data-depth="1" data-location="10"><a href="#盒子提示和警告">盒子、提示和警告</a><ol><li data-target-id="给不同盒子上色" data-depth="2" data-location="10.1"><a href="#给不同盒子上色">给不同盒子上色</a></li></ol></li><li data-target-id="布局函数" data-depth="1" data-location="11"><a href="#布局函数">布局函数</a><ol><li data-target-id="居中和对齐" data-depth="2" data-location="11.1"><a href="#居中和对齐">居中和对齐</a></li><li data-target-id="横向排列row" data-depth="2" data-location="11.2"><a href="#横向排列row">横向排列：.row</a></li><li data-target-id="网格grid" data-depth="2" data-location="11.3"><a href="#网格grid">网格：.grid</a></li><li data-target-id="浮动float" data-depth="2" data-location="11.4"><a href="#浮动float">浮动：.float</a></li><li data-target-id="多栏页面" data-depth="2" data-location="11.5"><a href="#多栏页面">多栏页面</a></li></ol></li><li data-target-id="多栏排版演示" data-depth="1" data-location="12"><a href="#多栏排版演示">多栏排版演示</a></li><li data-target-id="mermaid-图表" data-depth="1" data-location="13"><a href="#mermaid-图表">Mermaid 图表</a></li><li data-target-id="变量和函数" data-depth="1" data-location="14"><a href="#变量和函数">变量和函数</a><ol><li data-target-id="调用函数" data-depth="2" data-location="14.1"><a href="#调用函数">调用函数</a></li><li data-target-id="变量" data-depth="2" data-location="14.2"><a href="#变量">变量</a></li><li data-target-id="自定义函数" data-depth="2" data-location="14.3"><a href="#自定义函数">自定义函数</a></li><li data-target-id="可选参数" data-depth="2" data-location="14.4"><a href="#可选参数">可选参数</a></li><li data-target-id="条件判断" data-depth="2" data-location="14.5"><a href="#条件判断">条件判断</a></li><li data-target-id="循环和数据" data-depth="2" data-location="14.6"><a href="#循环和数据">循环和数据</a></li></ol></li><li data-target-id="文件读取和外部资源" data-depth="1" data-location="15"><a href="#文件读取和外部资源">文件读取和外部资源</a><ol><li data-target-id="读取文本文件" data-depth="2" data-location="15.1"><a href="#读取文本文件">读取文本文件</a></li><li data-target-id="权限提示" data-depth="2" data-location="15.2"><a href="#权限提示">权限提示</a></li></ol></li><li data-target-id="htmlcss-和原生内容" data-depth="1" data-location="16"><a href="#htmlcss-和原生内容">HTML、CSS 和原生内容</a><ol><li data-target-id="html-示例" data-depth="2" data-location="16.1"><a href="#html-示例">HTML 示例</a></li><li data-target-id="什么时候用-css" data-depth="2" data-location="16.2"><a href="#什么时候用-css">什么时候用 CSS</a></li></ol></li><li data-target-id="字体设置中文俄语和混排" data-depth="1" data-location="17"><a href="#字体设置中文俄语和混排">字体设置：中文、俄语和混排</a><ol><li data-target-id="全局字体" data-depth="2" data-location="17.1"><a href="#全局字体">全局字体</a></li><li data-target-id="推荐字体组合" data-depth="2" data-location="17.2"><a href="#推荐字体组合">推荐字体组合</a></li><li data-target-id="按语言自动指定字体" data-depth="2" data-location="17.3"><a href="#按语言自动指定字体">按语言自动指定字体</a></li><li data-target-id="用-class-精确指定中文字体" data-depth="2" data-location="17.4"><a href="#用-class-精确指定中文字体">用 class 精确指定中文字体</a></li><li data-target-id="用-class-精确指定俄语字体" data-depth="2" data-location="17.5"><a href="#用-class-精确指定俄语字体">用 class 精确指定俄语字体</a></li><li data-target-id="中文俄语混用示例" data-depth="2" data-location="17.6"><a href="#中文俄语混用示例">中文俄语混用示例</a></li><li data-target-id="用-quarkdown-函数封装字体" data-depth="2" data-location="17.7"><a href="#用-quarkdown-函数封装字体">用 Quarkdown 函数封装字体</a></li><li data-target-id="使用本地字体文件" data-depth="2" data-location="17.8"><a href="#使用本地字体文件">使用本地字体文件</a></li><li data-target-id="字体排错清单" data-depth="2" data-location="17.9"><a href="#字体排错清单">字体排错清单</a></li><li data-target-id="quarkdown-里的字体边界" data-depth="2" data-location="17.10"><a href="#quarkdown-里的字体边界">Quarkdown 里的字体边界</a></li></ol></li><li data-target-id="多文件项目" data-depth="1" data-location="18"><a href="#多文件项目">多文件项目</a><ol><li data-target-id="include" data-depth="2" data-location="18.1"><a href="#include">include</a></li><li data-target-id="推荐目录结构" data-depth="2" data-location="18.2"><a href="#推荐目录结构">推荐目录结构</a></li></ol></li><li data-target-id="调试和编译" data-depth="1" data-location="19"><a href="#调试和编译">调试和编译</a><ol><li data-target-id="实时预览" data-depth="2" data-location="19.1"><a href="#实时预览">实时预览</a></li><li data-target-id="导出-pdf" data-depth="2" data-location="19.2"><a href="#导出-pdf">导出 PDF</a></li><li data-target-id="严格模式" data-depth="2" data-location="19.3"><a href="#严格模式">严格模式</a></li><li data-target-id="清理输出目录" data-depth="2" data-location="19.4"><a href="#清理输出目录">清理输出目录</a></li></ol></li><li data-target-id="常见写作套路" data-depth="1" data-location="20"><a href="#常见写作套路">常见写作套路</a><ol><li data-target-id="讲义模板" data-depth="2" data-location="20.1"><a href="#讲义模板">讲义模板</a></li><li data-target-id="技术文章模板" data-depth="2" data-location="20.2"><a href="#技术文章模板">技术文章模板</a></li><li data-target-id="pdf-报告模板" data-depth="2" data-location="20.3"><a href="#pdf-报告模板">PDF 报告模板</a></li></ol></li><li data-target-id="函数速查" data-depth="1" data-location="21"><a href="#函数速查">函数速查</a></li><li data-target-id="结语" data-depth="1" data-location="22"><a href="#结语">结语</a></li></ol></nav><div class="page-break" data-hidden=""></div><div class="page-number-reset" data-start="1" data-hidden=""></div><div class="page-number-formatter" data-format="1" data-hidden=""></div><h1 class="page-break" id="mental-model" data-location="1">快速心智模型</h1><p>Quarkdown 是 Markdown 的增强版。它保留了 Markdown 的基本写法，同时引入了“函数调用”来控制排版、文档信息、布局、计算和引用。</p><p>你可以把一份 Quarkdown 文档拆成三层：</p><ol><li><strong>Markdown 层</strong>：标题、段落、列表、引用、链接、代码块。</li><li><strong>文档层</strong>：标题、作者、语言、页面类型、页边距、目录、页码。</li><li><strong>函数层</strong>：变量、条件、循环、自定义组件、图表、布局容器。</li></ol><figure id="workflow"><img src="media/workflow@182858758.svg" alt="Quarkdown 写作流程" title="从源文件到 HTML/PDF 的流程" style="width: 82.0%;" /><figcaption class="caption-bottom" data-location="1.1" data-localized-kind="图">从源文件到 HTML/PDF 的流程</figcaption></figure><p>如图 <a href="#workflow"><span class="cross-reference" data-location="1.1" data-localized-kind="图"></span></a> 所示，最常见的工作流就是：写 <span class="codespan-content"><code>main.qd</code></span>，编译，预览或导出。</p><h2 id="最常用命令" data-location="1.1">最常用命令</h2><table id="cli-table"><thead><tr><th>命令</th><th>用途</th></tr></thead><tbody><tr><td><span class="codespan-content"><code>quarkdown create my-doc</code></span></td><td>创建新项目</td></tr><tr><td><span class="codespan-content"><code>quarkdown c main.qd</code></span></td><td>编译当前文档</td></tr><tr><td><span class="codespan-content"><code>quarkdown c main.qd -p -w</code></span></td><td>打开浏览器并监听改动</td></tr><tr><td><span class="codespan-content"><code>quarkdown c main.qd --pdf</code></span></td><td>导出 PDF</td></tr><tr><td><span class="codespan-content"><code>quarkdown compile --help</code></span></td><td>查看编译参数</td></tr></tbody><caption class="caption-bottom" data-location="1.1" data-localized-kind="表">常用 CLI 命令</caption></table><p>表 <a href="#cli-table"><span class="cross-reference" data-location="1.1" data-localized-kind="表"></span></a> 是入门时最值得记住的命令。<span class="codespan-content"><code>c</code></span> 是 <span class="codespan-content"><code>compile</code></span> 的短写。</p><h2 id="一个最小文件" data-location="1.2">一个最小文件</h2><p>最小的 Quarkdown 文件可以只有 Markdown：</p><figure id="listing-1.1"><pre><code class="language-markdown"># 我的文档
+
+    这是 **Markdown**。
+</code></pre><figcaption class="caption-bottom" data-location="1.1" data-localized-kind="代码"></figcaption></figure><p>但是实际做 PDF 或长文时，建议一开始就写上文档元信息：</p><figure id="listing-1.2"><pre><code class="language-markdown">.docname {我的文档}
+    .doctype {paged}
+    .doclang {zh}
+
+    # 第一章
+
+    正文从这里开始。
+</code></pre><figcaption class="caption-bottom" data-location="1.2" data-localized-kind="代码"></figcaption></figure><h1 class="page-break" id="文档元信息" data-location="2">文档元信息</h1><p>文档元信息通常放在文件最上面。它们不是给读者看的正文，而是告诉 Quarkdown：文档叫什么、谁写的、是什么类型、用什么语言。</p><h2 id="标题作者关键词" data-location="2.1">标题、作者、关键词</h2><p>本文件开头用了这些函数：</p><figure id="listing-2.1"><pre><code class="language-markdown">.docname {Quarkdown 完整功能写作手册}
+    .docdescription {一份面向初学者的 Quarkdown 长文模板。}
+    .docauthor {itworksig}
+    .dockeywords
+        - quarkdown
+        - markdown
+        - pdf
+    .doclang {zh}
+</code></pre><figcaption class="caption-bottom" data-location="2.1" data-localized-kind="代码"></figcaption></figure><p><span class="codespan-content"><code>.docname</code></span> 会影响输出文件名和页面标题；<span class="codespan-content"><code>.docauthor</code></span> 是单作者快捷写法；<span class="codespan-content"><code>.docauthors</code></span> 可以写多个作者；<span class="codespan-content"><code>.dockeywords</code></span> 对 HTML 输出的搜索和元信息有帮助。</p><p>多作者写法可以这样：</p><figure id="listing-2.2"><pre><code class="language-markdown">.docauthors
+    - itworksig
+        - role: author
+    - Another Name
+        - role: editor
+</code></pre><figcaption class="caption-bottom" data-location="2.2" data-localized-kind="代码"></figcaption></figure><h2 id="文档类型" data-location="2.2">文档类型</h2><p><span class="codespan-content"><code>.doctype</code></span> 决定文档的整体形态：</p><table id="doctype-table"><thead><tr><th>类型</th><th>适合场景</th><th>特点</th></tr></thead><tbody><tr><td><span class="codespan-content"><code>plain</code></span></td><td>笔记、网页文章</td><td>连续滚动，没有传统分页</td></tr><tr><td><span class="codespan-content"><code>paged</code></span></td><td>PDF、讲义、论文</td><td>有页面、页边距、页码</td></tr><tr><td><span class="codespan-content"><code>slides</code></span></td><td>演示文稿</td><td>一页一屏，适合投影</td></tr><tr><td><span class="codespan-content"><code>docs</code></span></td><td>文档站、知识库</td><td>有侧栏和多页结构</td></tr></tbody><caption class="caption-bottom" data-location="2.1" data-localized-kind="表">文档类型选择</caption></table><p>如果你想做封面、目录、页码和 PDF，最推荐：</p><figure id="listing-2.3"><pre><code class="language-markdown">.doctype {paged}
+</code></pre><figcaption class="caption-bottom" data-location="2.3" data-localized-kind="代码"></figcaption></figure><h1 class="page-break" id="封面分页和页码" data-location="3">封面、分页和页码</h1><p>Quarkdown 不要求你必须用某个固定封面函数。最稳的做法是：第一页自己排版成封面，然后用 <span class="codespan-content"><code>.pagebreak</code></span> 进入目录或正文。</p><h2 id="手工封面" data-location="3.1">手工封面</h2><p>本文件的封面结构大概是这样：</p><figure id="listing-3.1"><pre><code class="language-markdown">.center
+        !(55%)[封面图](assets/cover.svg)
+
+    .center
+        #! Quarkdown 完整功能写作手册
+
+    .center
+        从 Markdown 到可打印 PDF 的实用模板
+
+    .pagebreak
+</code></pre><figcaption class="caption-bottom" data-location="3.1" data-localized-kind="代码"></figcaption></figure><p>这里有三个技巧：</p><ul><li><span class="codespan-content"><code>.center</code></span> 是 <span class="codespan-content"><code>.align {center}</code></span> 的简写，用来居中内容。</li><li><span class="codespan-content"><code>#!</code></span> 是装饰性一级标题，不参与编号和目录。</li><li><span class="codespan-content"><code>.pagebreak</code></span> 强制换页。</li></ul><h2 id="页面尺寸和页边距" data-location="3.2">页面尺寸和页边距</h2><p>本文件使用 A4 页面，并且左右页边距是镜像的：</p><figure id="listing-3.2"><pre><code class="language-markdown">.pageformat size:{A4} margin:{2.2cm}
+    .pageformat side:{left} margin:{2.2cm 2.6cm 2.2cm 1.8cm}
+    .pageformat side:{right} margin:{2.2cm 1.8cm 2.2cm 2.6cm}
+</code></pre><figcaption class="caption-bottom" data-location="3.2" data-localized-kind="代码"></figcaption></figure><p>第二、第三行适合双面打印：左页和右页的内侧留更多空间，装订时更舒服。</p><h2 id="页眉和页脚" data-location="3.3">页眉和页脚</h2><p>页眉页脚通过 <span class="codespan-content"><code>.pagemargin</code></span> 写：</p><figure id="listing-3.3"><pre><code class="language-markdown">.pagemargin {topcenter}
+        .lastheading depth:{1}
+
+    .pagemargin {bottomcenter}
+        .currentpage / .totalpages
+</code></pre><figcaption class="caption-bottom" data-location="3.3" data-localized-kind="代码"></figcaption></figure><p><span class="codespan-content"><code>.lastheading depth:{1}</code></span> 会显示最近的一级标题；<span class="codespan-content"><code>.currentpage</code></span> 是当前页码；<span class="codespan-content"><code>.totalpages</code></span> 是总页数。</p><h2 id="罗马页码和正文页码" data-location="3.4">罗马页码和正文页码</h2><p>很多书会让目录页使用罗马数字，正文重新从 1 开始。写法是：</p><figure id="listing-3.4"><pre><code class="language-markdown">.formatpagenumber {i}
+    .tableofcontents title:{目录}
+
+    .pagebreak
+    .resetpagenumber start:{1}
+    .formatpagenumber {1}
+</code></pre><figcaption class="caption-bottom" data-location="3.4" data-localized-kind="代码"></figcaption></figure><h1 class="page-break" id="目录和编号" data-location="4">目录和编号</h1><p>目录由 <span class="codespan-content"><code>.tableofcontents</code></span> 生成，编号由 <span class="codespan-content"><code>.numbering</code></span> 控制。</p><h2 id="目录" data-location="4.1">目录</h2><p>最简单写法：</p><figure id="listing-4.1"><pre><code class="language-markdown">.tableofcontents
+</code></pre><figcaption class="caption-bottom" data-location="4.1" data-localized-kind="代码"></figcaption></figure><p>限制目录深度：</p><figure id="listing-4.2"><pre><code class="language-markdown">.tableofcontents title:{目录} maxdepth:{2}
+</code></pre><figcaption class="caption-bottom" data-location="4.2" data-localized-kind="代码"></figcaption></figure><p><span class="codespan-content"><code>maxdepth:{2}</code></span> 表示只收集 <span class="codespan-content"><code>#</code></span> 和 <span class="codespan-content"><code>##</code></span>，不收集更深的 <span class="codespan-content"><code>###</code></span>。</p><h2 id="编号" data-location="4.2">编号</h2><p>本文件使用：</p><figure id="listing-4.3"><pre><code class="language-markdown">.numbering
+        - headings: 1.1.1
+        - figures: 1.1
+        - tables: 1.1
+        - equations: 1.1
+        - code: 1.1
+        - footnotes: 1
+</code></pre><figcaption class="caption-bottom" data-location="4.3" data-localized-kind="代码"></figcaption></figure><p>常见规则：</p><ul><li><span class="codespan-content"><code>headings</code></span> 控制章节标题编号。</li><li><span class="codespan-content"><code>figures</code></span> 控制图片编号。</li><li><span class="codespan-content"><code>tables</code></span> 控制表格编号。</li><li><span class="codespan-content"><code>equations</code></span> 控制公式编号。</li><li><span class="codespan-content"><code>code</code></span> 控制代码块编号。</li><li><span class="codespan-content"><code>none</code></span> 可以关闭某类编号。</li></ul><h2 id="装饰性标题" data-location="4.3">装饰性标题</h2><p>如果你想让一个标题看起来像标题，但不进目录、不编号，可以在 <span class="codespan-content"><code>#</code></span> 后面加 <span class="codespan-content"><code>!</code></span>：</p><figure id="listing-4.4"><pre><code class="language-markdown">##! 这是一个装饰性标题
+</code></pre><figcaption class="caption-bottom" data-location="4.4" data-localized-kind="代码"></figcaption></figure><p>本文件封面上的 <span class="codespan-content"><code>#! Quarkdown 完整功能写作手册</code></span> 就是这个用途。</p><h1 class="page-break" id="markdown-基础" data-location="5">Markdown 基础</h1><p>Quarkdown 继承 Markdown，所以你仍然可以写普通 Markdown。</p><h2 id="强调删除线链接" data-location="5.1">强调、删除线、链接</h2><p>你可以写 <strong>加粗</strong>、<em>斜体</em>、<del>删除线</del>、<span class="codespan-content"><code>行内代码</code></span>，也可以写链接：<a href="https://quarkdown.com">Quarkdown</a>。</p><figure id="listing-5.1"><pre><code class="language-markdown">**加粗**
+    *斜体*
+    ~~删除线~~
+    `行内代码`
+    [链接文字](https://example.com)
+</code></pre><figcaption class="caption-bottom" data-location="5.1" data-localized-kind="代码"></figcaption></figure><h2 id="列表" data-location="5.2">列表</h2><p>无序列表：</p><ul><li>写正文。</li><li>插图片。</li><li>编译预览。</li></ul><p>有序列表：</p><ol><li>创建项目。</li><li>编辑 <span class="codespan-content"><code>main.qd</code></span>。</li><li>运行编译命令。</li></ol><p>任务列表：</p><ul><li class="task-list-item"><input disabled="" type="checkbox" checked="" />写封面。</li><li class="task-list-item"><input disabled="" type="checkbox" checked="" />加目录。</li><li class="task-list-item"><input disabled="" type="checkbox" />导出最终 PDF。</li></ul><h2 id="引用和脚注" data-location="5.3">引用和脚注</h2><p>普通引用：</p><blockquote><p>Quarkdown 的强项，是让 Markdown 在保持可读性的同时拥有更多排版控制力。</p></blockquote><p>脚注写法和 GFM 类似<sup class="footnote-reference footnote-label" data-definition="__footnote-footnote-basic"><a href="#__footnote-footnote-basic">1</a></sup>。也可以写紧凑脚注<sup class="footnote-reference footnote-label" data-definition="__footnote-15e4d7cc-a59c-4a24-a077-22571b482c15"><a href="#__footnote-15e4d7cc-a59c-4a24-a077-22571b482c15">2</a></sup><span class="footnote-definition" id="__footnote-15e4d7cc-a59c-4a24-a077-22571b482c15" data-footnote-index="1"><sup class="footnote-label">2</sup><span>这是一个直接写在引用处的紧凑脚注。</span></span>。</p><span class="footnote-definition" id="__footnote-footnote-basic" data-footnote-index="0"><sup class="footnote-label">1</sup><span>这是一个普通脚注定义。<span class="codespan-content"><code>paged</code></span> 文档里通常出现在页面底部，<span class="codespan-content"><code>plain</code></span> 文档里可能作为旁注显示。</span></span><h1 class="page-break" id="图片图注和交叉引用" data-location="6">图片、图注和交叉引用</h1><p>图片是长文里最常用的增强内容之一。</p><h2 id="普通图片" data-location="6.1">普通图片</h2><p>Markdown 原生写法：</p><figure id="listing-6.1"><pre><code class="language-markdown">![替代文字](assets/workflow.svg)
+</code></pre><figcaption class="caption-bottom" data-location="6.1" data-localized-kind="代码"></figcaption></figure><p>Quarkdown 增强写法，可以控制尺寸：</p><figure id="listing-6.2"><pre><code class="language-markdown">!(80%)[替代文字](assets/workflow.svg)
+    !(640px)[替代文字](assets/workflow.svg)
+    !(12cm)[替代文字](assets/workflow.svg)
+</code></pre><figcaption class="caption-bottom" data-location="6.2" data-localized-kind="代码"></figcaption></figure><h2 id="图注和引用" data-location="6.2">图注和引用</h2><p>如果图片单独占一段，并且带标题，就会成为 figure。再加 <span class="codespan-content"><code>{#id}</code></span>，就能在正文里引用：</p><figure id="listing-6.3"><pre><code class="language-markdown">!(82%)[流程图](assets/workflow.svg &quot;从源文件到输出的流程&quot;) {#workflow}
+
+    如图 .ref {workflow} 所示，Quarkdown 的流程很直接。
+</code></pre><figcaption class="caption-bottom" data-location="6.3" data-localized-kind="代码"></figcaption></figure><p>前面的图 <a href="#workflow"><span class="cross-reference" data-location="1.1" data-localized-kind="图"></span></a> 就是这样写出来的。</p><h2 id="图片尺寸单位" data-location="6.3">图片尺寸单位</h2><p>常见单位：</p><table id="image-size-table"><thead><tr><th>写法</th><th>含义</th></tr></thead><tbody><tr><td><span class="codespan-content"><code>!(80%)</code></span></td><td>占可用宽度的 80%</td></tr><tr><td><span class="codespan-content"><code>!(640px)</code></span></td><td>固定 640 像素宽</td></tr><tr><td><span class="codespan-content"><code>!(12cm)</code></span></td><td>固定 12 厘米宽</td></tr><tr><td><span class="codespan-content"><code>!(6cm 3cm)</code></span></td><td>固定宽 6cm、高 3cm</td></tr><tr><td><span class="codespan-content"><code>!(_ 3cm)</code></span></td><td>宽度自动，高度 3cm</td></tr></tbody><caption class="caption-bottom" data-location="6.1" data-localized-kind="表">图片尺寸写法</caption></table><h1 class="page-break" id="表格" data-location="7">表格</h1><p>Quarkdown 支持 Markdown 表格，并能给表格加标题和引用 ID。</p><h2 id="基础表格" data-location="7.1">基础表格</h2><table id="core-functions-table"><thead><tr><th>功能</th><th>函数</th><th>常用场景</th></tr></thead><tbody><tr><td>目录</td><td><span class="codespan-content"><code>.tableofcontents</code></span></td><td>长文、PDF</td></tr><tr><td>页码</td><td><span class="codespan-content"><code>.currentpage</code></span></td><td>页脚</td></tr><tr><td>图片引用</td><td><span class="codespan-content"><code>.ref</code></span></td><td>图表说明</td></tr><tr><td>盒子</td><td><span class="codespan-content"><code>.box</code></span></td><td>提示、警告、注释</td></tr></tbody><caption class="caption-bottom" data-location="7.1" data-localized-kind="表">核心函数速查</caption></table><p>在正文中可以写：表 <a href="#core-functions-table"><span class="cross-reference" data-location="7.1" data-localized-kind="表"></span></a> 总结了最常用的几个函数。</p><h2 id="表格写法" data-location="7.2">表格写法</h2><figure id="listing-7.1"><pre><code class="language-markdown">| 功能 | 函数 | 常用场景 |
+    | --- | --- | --- |
+    | 目录 | `.tableofcontents` | 长文、PDF |
+    | 页码 | `.currentpage` | 页脚 |
+    &quot;核心函数速查&quot; {#core-functions-table}
+</code></pre><figcaption class="caption-bottom" data-location="7.1" data-localized-kind="代码"></figcaption></figure><p>表格后面那一行 <span class="codespan-content"><code>&quot;标题&quot; {#id}</code></span> 就是表格标题和引用 ID。</p><h2 id="表格线条和斑马纹" data-location="7.3">表格线条和斑马纹</h2><p>Quarkdown 的表格最终会渲染成 HTML <span class="codespan-content"><code>&lt;table&gt;</code></span>，所以表格线条最稳的做法是用 <span class="codespan-content"><code>.css</code></span> 写：</p><figure id="listing-7.2"><pre><code class="language-markdown">.css
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  table th,
+  table td {
+    border: 1px solid #cbd5e1;
+    padding: 8px 10px;
+  }
+
+  table th {
+    background: #eff6ff;
+    font-weight: 700;
+  }
+
+  table tbody tr:nth-child(even) {
+    background: #f8fafc;
+  }
+</code></pre><figcaption class="caption-bottom" data-location="7.2" data-localized-kind="代码"></figcaption></figure><p>这里几个属性很常用：</p><table id="table-css-table"><thead><tr><th>CSS</th><th>作用</th></tr></thead><tbody><tr><td><span class="codespan-content"><code>border-collapse: collapse</code></span></td><td>合并相邻单元格边框，不会出现双线</td></tr><tr><td><span class="codespan-content"><code>border: 1px solid #cbd5e1</code></span></td><td>给表格单元格加线</td></tr><tr><td><span class="codespan-content"><code>padding: 8px 10px</code></span></td><td>让文字不要贴着边框</td></tr><tr><td><span class="codespan-content"><code>tr:nth-child(even)</code></span></td><td>偶数行换底色，形成斑马纹</td></tr></tbody><caption class="caption-bottom" data-location="7.2" data-localized-kind="表">表格美化 CSS 说明</caption></table><h1 class="page-break" id="公式" data-location="8">公式</h1><p>Quarkdown 支持 TeX 风格公式。行内公式写成 <span class="codespan-content"><code>$ E = mc^2 $</code></span>。如果公式单独成段，会显示成块级公式。</p><h2 id="行内和块级公式" data-location="8.1">行内和块级公式</h2><p>行内公式示例：<formula>E = mc^2</formula>。</p><p>块级公式：</p><formula data-block="" id="attention-equation" data-location="8.1">Attention(Q, K, V) = softmax(\frac{QK^T}{\sqrt{d_k}})V</formula><p>公式 <a href="#attention-equation"><span class="cross-reference" data-location="8.1"></span></a> 是 Transformer 里最常见的注意力公式。</p><h2 id="多行公式" data-location="8.2">多行公式</h2><p>多行公式可以用 <span class="codespan-content"><code>$$$</code></span>：</p><formula data-block="" id="loss-equation" data-location="8.2">L(\theta) = - \sum_{i=1}^{n} y_i \log p_\theta(y_i \mid x_i)</formula><p>公式 <a href="#loss-equation"><span class="cross-reference" data-location="8.2"></span></a> 演示了带编号的多行公式。</p><h1 class="page-break" id="代码块" data-location="9">代码块</h1><p>你可以用 Markdown 代码块，也可以用 Quarkdown 的 <span class="codespan-content"><code>.code</code></span> 函数。</p><h2 id="普通代码块" data-location="9.1">普通代码块</h2><figure id="inline-code-sample"><pre><code class="language-typescript">export function add(a: number, b: number) {
+  return a + b;
+}</code></pre><figcaption class="caption-bottom" data-location="9.1" data-localized-kind="代码">一个 TypeScript 函数</figcaption></figure><p>代码 <a href="#inline-code-sample"><span class="cross-reference" data-location="9.1" data-localized-kind="代码"></span></a> 是普通 fenced code block，并带标题和 ID。</p><h2 id="code-函数" data-location="9.2"><span class="codespan-content"><code>.code</code></span> 函数</h2><p><span class="codespan-content"><code>.code</code></span> 可以设置语言、行号、聚焦行，也可以读取外部文件：</p><figure id="listing-9.2"><pre><code class="language-typescript focus-lines" data-focus-start="1" data-focus-end="3">export function greet(name: string) {
+  return `Hello, ${name}!`;
+}
+
+console.log(greet(&quot;Quarkdown&quot;));
+</code></pre><figcaption class="caption-bottom" data-location="9.2" data-localized-kind="代码"></figcaption></figure><p>对应写法：</p><figure id="listing-9.3"><pre><code class="language-markdown">.code lang:{typescript} focus:{1..3}
+        .read {snippets/hello.ts}
+</code></pre><figcaption class="caption-bottom" data-location="9.3" data-localized-kind="代码"></figcaption></figure><p>如果不想显示行号：</p><figure id="listing-9.4"><pre><code class="language-markdown">.code lang:{typescript} linenumbers:{no}
+        console.log(&quot;No line numbers&quot;);
+</code></pre><figcaption class="caption-bottom" data-location="9.4" data-localized-kind="代码"></figcaption></figure><h2 id="美化代码框" data-location="9.3">美化代码框</h2><p>Quarkdown 的 HTML 输出会加载 highlight.js。代码高亮通常分两层：</p><ol><li><span class="codespan-content"><code>pre</code></span>、<span class="codespan-content"><code>figure:has(pre)</code></span>、<span class="codespan-content"><code>figcaption</code></span> 控制代码框外观。</li><li><span class="codespan-content"><code>.hljs-*</code></span> 控制关键字、字符串、注释、数字、函数名等 token 颜色。</li></ol><p>下面是一套接近 GitHub Light 的 highlight.js 主题：</p><figure id="listing-9.5"><pre><code class="language-markdown">.css
+  figure:has(pre),
+  pre {
+    border: 1px solid #d0d7de;
+    border-radius: 9px;
+    background: #f6f8fa;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.10);
+    overflow: hidden;
+  }
+
+  pre {
+    padding: 16px 18px;
+    line-height: 1.58;
+    font-size: 0.88em;
+  }
+
+  pre code,
+  pre code.hljs {
+    background: transparent;
+    color: #24292f;
+  }
+
+  figure:has(pre) figcaption {
+    background: #f6f8fa;
+    border-top: 1px solid #d0d7de;
+    color: #57606a;
+    font-size: 0.85em;
+    padding: 8px 14px;
+  }
+
+  .hljs-comment,
+  .hljs-quote {
+    color: #6e7781;
+    font-style: italic;
+  }
+
+  .hljs-keyword,
+  .hljs-selector-tag {
+    color: #cf222e;
+    font-weight: 650;
+  }
+
+  .hljs-title,
+  .hljs-title.function_,
+  .hljs-function .hljs-title {
+    color: #8250df;
+    font-weight: 650;
+  }
+
+  .hljs-string,
+  .hljs-attr {
+    color: #116329;
+  }
+
+  .hljs-number,
+  .hljs-literal,
+  .hljs-variable {
+    color: #953800;
+  }
+
+  .hljs-type,
+  .hljs-class .hljs-title {
+    color: #0550ae;
+    font-weight: 650;
+  }
+</code></pre><figcaption class="caption-bottom" data-location="9.5" data-localized-kind="代码"></figcaption></figure><p><span class="codespan-content"><code>pre</code></span> 是代码块主体，<span class="codespan-content"><code>figure:has(pre)</code></span> 是带标题或编号的代码块外框，<span class="codespan-content"><code>figcaption</code></span> 是代码标题/编号区域。<span class="codespan-content"><code>.hljs-keyword</code></span>、<span class="codespan-content"><code>.hljs-string</code></span>、<span class="codespan-content"><code>.hljs-comment</code></span> 这些选择器就是 highlight.js 给语法 token 加的 class。</p><p>常见 highlight.js class：</p><table id="hljs-token-table"><thead><tr><th>Class</th><th>控制内容</th></tr></thead><tbody><tr><td><span class="codespan-content"><code>.hljs-keyword</code></span></td><td><span class="codespan-content"><code>function</code></span>、<span class="codespan-content"><code>return</code></span>、<span class="codespan-content"><code>const</code></span> 这类关键字</td></tr><tr><td><span class="codespan-content"><code>.hljs-string</code></span></td><td>字符串</td></tr><tr><td><span class="codespan-content"><code>.hljs-comment</code></span></td><td>注释</td></tr><tr><td><span class="codespan-content"><code>.hljs-number</code></span></td><td>数字</td></tr><tr><td><span class="codespan-content"><code>.hljs-title.function_</code></span></td><td>函数名</td></tr><tr><td><span class="codespan-content"><code>.hljs-type</code></span></td><td>类型名</td></tr></tbody><caption class="caption-bottom" data-location="9.1" data-localized-kind="表">highlight.js token class</caption></table><h1 class="page-break" id="盒子提示和警告" data-location="10">盒子、提示和警告</h1><p><span class="codespan-content"><code>.box</code></span> 是非常实用的块级组件。它适合写提示、注意事项、危险警告和解释性插入段。</p><div class="box callout"><header><h4>普通 Callout</h4></header><div class="box-content"><p>如果不指定 <span class="codespan-content"><code>type</code></span>，默认是普通 callout。</p></div></div><div class="box callout"><header><h4>Tip</h4></header><div class="box-content"><p>type:{tip}
+适合写建议、快捷方法、推荐做法。</p></div></div><div class="box callout"><header><h4>Note</h4></header><div class="box-content"><p>type:{note}
+适合写补充信息，不打断主线。</p></div></div><div class="box callout"><header><h4>Warning</h4></header><div class="box-content"><p>type:{warning}
+适合写需要读者注意的坑。</p></div></div><div class="box callout"><header><h4>Error</h4></header><div class="box-content"><p>type:{error}
+适合写不要这么做、会导致失败的情况。</p></div></div><p>写法：</p><figure id="listing-10.1"><pre><code class="language-markdown">.box {Warning} type:{warning}
+        这里写警告内容。
+</code></pre><figcaption class="caption-bottom" data-location="10.1" data-localized-kind="代码"></figcaption></figure><h2 id="给不同盒子上色" data-location="10.1">给不同盒子上色</h2><p>如果默认盒子都是灰色，可以用 CSS 按类型改颜色。Quarkdown 输出的盒子会带 <span class="codespan-content"><code>.box</code></span>，同时会带 <span class="codespan-content"><code>.tip</code></span>、<span class="codespan-content"><code>.note</code></span>、<span class="codespan-content"><code>.warning</code></span>、<span class="codespan-content"><code>.error</code></span> 这类类型 class。</p><figure id="listing-10.2"><pre><code class="language-markdown">.css
+  .box {
+    border: 1px solid #cbd5e1;
+    border-left-width: 6px;
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  }
+
+  .box.tip {
+    border-color: #14b8a6;
+    background: #f0fdfa;
+  }
+
+  .box.note {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+
+  .box.warning {
+    border-color: #f59e0b;
+    background: #fffbeb;
+  }
+
+  .box.error {
+    border-color: #ef4444;
+    background: #fef2f2;
+  }
+</code></pre><figcaption class="caption-bottom" data-location="10.2" data-localized-kind="代码"></figcaption></figure><p>这样读者一眼就能区分：绿色是建议，蓝色是说明，黄色是注意，红色是错误或危险。</p><h1 class="page-break" id="布局函数" data-location="11">布局函数</h1><p>当 Markdown 的线性排版不够用时，就用布局函数。</p><h2 id="居中和对齐" data-location="11.1">居中和对齐</h2><p><span class="codespan-content"><code>.align</code></span> 可以设置水平对齐，<span class="codespan-content"><code>.center</code></span> 是居中简写。</p><div class="container fullwidth" style="justify-items: end; text-align: end;"><p>这一行靠右。</p></div><div class="container fullwidth" style="justify-items: center; text-align: center;"><p>这一行居中。</p></div><p>写法：</p><figure id="listing-11.1"><pre><code class="language-markdown">.align {end}
+        这一行靠右。
+
+    .center
+        这一行居中。
+</code></pre><figcaption class="caption-bottom" data-location="11.1" data-localized-kind="代码"></figcaption></figure><h2 id="横向排列row" data-location="11.2">横向排列：<span class="codespan-content"><code>.row</code></span></h2><div style="justify-content: flex-start; align-items: stretch; column-gap: 1.0cm;" class="stack stack-row"><div class="box tip"><header><h4>左侧</h4></header><div class="box-content"><p>这是第一个块。</p></div></div><div class="box note"><header><h4>中间</h4></header><div class="box-content"><p>这是第二个块。</p></div></div><div class="box warning"><header><h4>右侧</h4></header><div class="box-content"><p>这是第三个块。</p></div></div></div><p>写法：</p><figure id="listing-11.2"><pre><code class="language-markdown">.row gap:{1cm} cross:{stretch}
+        .box {左侧}
+            内容 A
+
+        .box {右侧}
+            内容 B
+</code></pre><figcaption class="caption-bottom" data-location="11.2" data-localized-kind="代码"></figcaption></figure><p><span class="codespan-content"><code>.row</code></span> 依靠 Markdown 的“块”来识别项目，所以每个项目之间要空一行。</p><h2 id="网格grid" data-location="11.3">网格：<span class="codespan-content"><code>.grid</code></span></h2><div style="grid-template-columns: auto auto; justify-content: center; align-items: center; row-gap: 0.6cm; column-gap: 0.6cm;" class="stack stack-grid"><p><strong>A. 文档元信息</strong></p><p><strong>B. 页面设置</strong></p><p><strong>C. 内容写作</strong></p><p><strong>D. 编译输出</strong></p></div><p>写法：</p><figure id="listing-11.3"><pre><code class="language-markdown">.grid columns:{2} gap:{0.6cm}
+        A
+
+        B
+
+        C
+
+        D
+</code></pre><figcaption class="caption-bottom" data-location="11.3" data-localized-kind="代码"></figcaption></figure><h2 id="浮动float" data-location="11.4">浮动：<span class="codespan-content"><code>.float</code></span></h2><div class="container float" style="float: inline-end;"><figure><img src="media/cover@893836442.svg" alt="封面小图" style="width: 32.0%;" /></figure></div><p>浮动内容会脱离正常文档流，让后面的文字绕着它排版。这个功能适合小图标、侧边提示和短注释，但不要滥用；长文里过多浮动元素会让页面变得难以预测。</p><p>写法：</p><figure id="listing-11.4"><pre><code class="language-markdown">.float {end}
+        !(32%)[小图](assets/cover.svg)
+</code></pre><figcaption class="caption-bottom" data-location="11.4" data-localized-kind="代码"></figcaption></figure><h2 id="多栏页面" data-location="11.5">多栏页面</h2><p><span class="codespan-content"><code>.pageformat columns:{2}</code></span> 可以让之后的页面变成多栏。下面这一小段故意切换到双栏，演示杂志或论文式排版。</p><div class="page-break" data-hidden=""></div><h1 class="page-break" id="多栏排版演示" data-location="12">多栏排版演示</h1><p>这是双栏页面。多栏适合词条、报告摘要、论文式说明，也适合把短段落密集排在一页里。一级、二级、三级标题通常会跨栏或按主题呈现，正文则进入栏布局。</p><p>你可以在某个位置临时放置跨栏内容：</p><div class="container full-column-span"><div class="box note"><header><h4>Full-span 内容</h4></header><div class="box-content"><p><span class="codespan-content"><code>.fullspan</code></span> 会让里面的内容跨过所有栏。适合放宽图、重点提示或章节摘要。</p></div></div></div><p>双栏文本不适合很长的代码块，也不适合复杂表格。遇到宽内容时，建议用 <span class="codespan-content"><code>.fullspan</code></span> 或切回单栏。</p><div class="page-break" data-hidden=""></div><h1 class="page-break" id="mermaid-图表" data-location="13">Mermaid 图表</h1><p>Quarkdown 可以直接嵌入 Mermaid。适合流程图、时序图、状态图和简单架构图。</p><figure id="figure-13.1"><pre class="mermaid">flowchart TD
+    A[Write main.qd] --&gt; B[Compile]
+    B --&gt; C{Output?}
+    C --&gt;|HTML| D[Preview in browser]
+    C --&gt;|PDF| E[Export printable document]
+    C --&gt;|Text| F[Plain text]</pre><figcaption class="caption-bottom" data-location="13.1" data-localized-kind="图">Quarkdown 文档处理流程</figcaption></figure><p>写法：</p><figure id="listing-13.1"><pre><code class="language-markdown">.mermaid caption:{Quarkdown 文档处理流程}
+        flowchart TD
+            A[Write main.qd] --&gt; B[Compile]
+            B --&gt; C{Output?}
+            C --&gt;|HTML| D[Preview in browser]
+            C --&gt;|PDF| E[Export PDF]
+</code></pre><figcaption class="caption-bottom" data-location="13.1" data-localized-kind="代码"></figcaption></figure><h1 class="page-break" id="变量和函数" data-location="14">变量和函数</h1><p>Quarkdown 的函数系统是它和普通 Markdown 最大的区别。</p><h2 id="调用函数" data-location="14.1">调用函数</h2><p>函数调用以点号开头：</p><figure id="listing-14.1"><pre><code class="language-markdown">.pow {5} to:{2}
+</code></pre><figcaption class="caption-bottom" data-location="14.1" data-localized-kind="代码"></figcaption></figure><p>它会计算 5 的 2 次方：25。</p><p>链式调用也可以：</p><figure id="listing-14.2"><pre><code class="language-markdown">.sqrt {10}::round::multiply {2}
+</code></pre><figcaption class="caption-bottom" data-location="14.2" data-localized-kind="代码"></figcaption></figure><p>结果是：6。</p><h2 id="变量" data-location="14.2">变量</h2><p><span class="codespan-content"><code>.var</code></span> 可以定义变量：</p><p>当前项目名是 <strong>Quarkdown 手册</strong>。</p><p>写法：</p><figure id="listing-14.3"><pre><code class="language-markdown">.var {projectname} {Quarkdown 手册}
+
+    当前项目名是 **.projectname**。
+</code></pre><figcaption class="caption-bottom" data-location="14.3" data-localized-kind="代码"></figcaption></figure><h2 id="自定义函数" data-location="14.3">自定义函数</h2><p>你可以声明自己的函数：</p><div class="box tip"><header><h4>自定义函数生成的盒子</h4></header><div class="box-content"><p>这个盒子不是手写 <span class="codespan-content"><code>.box</code></span>，而是通过 <span class="codespan-content"><code>.function</code></span> 封装出来的。</p></div></div><p>写法：</p><figure id="listing-14.4"><pre><code class="language-markdown">.function {examplebox}
+        title content:
+        .box {.title} type:{tip}
+            .content
+
+    .examplebox {自定义函数生成的盒子}
+        这里是内容。
+</code></pre><figcaption class="caption-bottom" data-location="14.4" data-localized-kind="代码"></figcaption></figure><h2 id="可选参数" data-location="14.4">可选参数</h2><p>可选参数用问号：</p><p>Hello, <strong>Quarkdown</strong> from anonymous.</p><p>Hello, <strong>Quarkdown</strong> from Codex.</p><p>写法：</p><figure id="listing-14.5"><pre><code class="language-markdown">.function {hello}
+        name from?:
+        Hello, **.name** from .from::otherwise {anonymous}.
+
+    .hello {Quarkdown}
+    .hello {Quarkdown} from:{Codex}
+</code></pre><figcaption class="caption-bottom" data-location="14.5" data-localized-kind="代码"></figcaption></figure><h2 id="条件判断" data-location="14.5">条件判断</h2><p>条件判断可以用 <span class="codespan-content"><code>.if</code></span>。例如：</p><p>4 是偶数，所以这句话会出现。</p><p>写法：</p><figure id="listing-14.6"><pre><code class="language-markdown">.if {.iseven {4}}
+        4 是偶数，所以这句话会出现。
+</code></pre><figcaption class="caption-bottom" data-location="14.6" data-localized-kind="代码"></figcaption></figure><h2 id="循环和数据" data-location="14.6">循环和数据</h2><p>循环适合生成重复内容。不同数据结构有不同写法，初学时建议先从官方示例开始。下面是一个常见模式：</p><figure id="listing-14.7"><pre><code class="language-markdown">.foreach {.docauthors}
+        name info:
+        **.name**
+</code></pre><figcaption class="caption-bottom" data-location="14.7" data-localized-kind="代码"></figcaption></figure><p>如果暂时记不住，也没关系。长文写作的第一阶段，真正高频的是 <span class="codespan-content"><code>.docname</code></span>、<span class="codespan-content"><code>.doctype</code></span>、<span class="codespan-content"><code>.tableofcontents</code></span>、<span class="codespan-content"><code>.numbering</code></span>、<span class="codespan-content"><code>.pagemargin</code></span>、<span class="codespan-content"><code>.box</code></span>、<span class="codespan-content"><code>.ref</code></span> 和 <span class="codespan-content"><code>.code</code></span>。</p><h1 class="page-break" id="文件读取和外部资源" data-location="15">文件读取和外部资源</h1><p>Quarkdown 可以读取项目里的文件。</p><h2 id="读取文本文件" data-location="15.1">读取文本文件</h2><p><span class="codespan-content"><code>.read</code></span> 可以读取文件内容。前面 <span class="codespan-content"><code>.code</code></span> 示例已经读过 <span class="codespan-content"><code>snippets/hello.ts</code></span>：</p><figure id="listing-15.1"><pre><code class="language-typescript">export function greet(name: string) {
+  return `Hello, ${name}!`;
+}
+
+console.log(greet(&quot;Quarkdown&quot;));
+</code></pre><figcaption class="caption-bottom" data-location="15.1" data-localized-kind="代码"></figcaption></figure><p>你也可以只读取一部分行：</p><figure id="listing-15.2"><pre><code class="language-markdown">.read {snippets/hello.ts} lines:{1..3}
+</code></pre><figcaption class="caption-bottom" data-location="15.2" data-localized-kind="代码"></figcaption></figure><h2 id="权限提示" data-location="15.2">权限提示</h2><p>Quarkdown 有权限系统。默认可以读取项目目录内文件，也可以嵌入原生 HTML/CSS。如果要读取项目外文件或访问网络，编译时可能需要：</p><figure id="listing-15.3"><pre><code class="language-bash">quarkdown c main.qd --allow global-read
+    quarkdown c main.qd --allow network
+</code></pre><figcaption class="caption-bottom" data-location="15.3" data-localized-kind="代码"></figcaption></figure><p>初学建议：图片、CSV、代码片段都放到项目目录内，比如 <span class="codespan-content"><code>assets/</code></span> 和 <span class="codespan-content"><code>snippets/</code></span>。</p><h1 class="page-break" id="htmlcss-和原生内容" data-location="16">HTML、CSS 和原生内容</h1><p>如果你需要更强的网页控制，可以写 HTML 或 CSS。不过做 PDF 文档时，不要太早依赖复杂 CSS；先把结构写清楚。</p><h2 id="html-示例" data-location="16.1">HTML 示例</h2><p>原生 HTML 可以这样放：</p><p>&lt;div style=&ldquo;border: 1px solid #94a3b8; padding: 12px; border-radius: 8px;&rdquo;&gt;
+  这是一个原生 HTML 块。默认权限允许 native content。
+&lt;/div&gt;</p><p>写法：</p><figure id="listing-16.1"><pre><code class="language-html">&lt;div style=&quot;border: 1px solid #94a3b8; padding: 12px;&quot;&gt;
+      这是一个原生 HTML 块。
+    &lt;/div&gt;
+</code></pre><figcaption class="caption-bottom" data-location="16.1" data-localized-kind="代码"></figcaption></figure><h2 id="什么时候用-css" data-location="16.2">什么时候用 CSS</h2><p>建议只在这些情况下用 CSS：</p><ul><li>调整品牌色。</li><li>控制某个自定义块的外观。</li><li>做 HTML 网页输出。</li><li>对 PDF 进行很小的视觉微调。</li></ul><p>不要用 CSS 替代所有 Quarkdown 函数。能用 <span class="codespan-content"><code>.pageformat</code></span>、<span class="codespan-content"><code>.pagemargin</code></span>、<span class="codespan-content"><code>.box</code></span>、<span class="codespan-content"><code>.row</code></span> 解决的，优先用这些函数。</p><h1 class="page-break" id="字体设置中文俄语和混排" data-location="17">字体设置：中文、俄语和混排</h1><p>Quarkdown 的主题会给文档提供默认字体，但实际做中文 PDF、俄语文档或中俄混排时，默认字体不一定符合你的审美，也不一定覆盖所有字符。最稳的做法是：用 <span class="codespan-content"><code>.font</code></span> 设置全局字体 fallback，用 <span class="codespan-content"><code>.css</code></span> 做局部语言和 class 的精确控制。</p><p>本文件顶部已经放了 <span class="codespan-content"><code>.font</code></span> 和 <span class="codespan-content"><code>.css</code></span>，它们做了四件事：</p><ol><li>设置全局正文字体。</li><li>给中文内容指定中文字体。</li><li>给俄语内容指定俄文字体。</li><li>给代码指定等宽字体。</li></ol><h2 id="全局字体" data-location="17.1">全局字体</h2><p>Quarkdown 官方提供 <span class="codespan-content"><code>.font</code></span> 函数。最简单的全局字体设置是：</p><figure id="listing-17.1"><pre><code class="language-markdown">.font {Times New Roman}
+</code></pre><figcaption class="caption-bottom" data-location="17.1" data-localized-kind="代码"></figcaption></figure><p>也可以分别指定正文、标题、代码和字号：</p><figure id="listing-17.2"><pre><code class="language-markdown">.font {Times New Roman} heading:{Times New Roman} size:{11pt}
+</code></pre><figcaption class="caption-bottom" data-location="17.2" data-localized-kind="代码"></figcaption></figure><p>如果要设置 fallback，就多次调用 <span class="codespan-content"><code>.font</code></span>。后面的字体优先级更高；当后面的字体不支持某些字符时，会回退到前面配置过的字体：</p><figure id="listing-17.3"><pre><code class="language-markdown">.font {PingFang SC}
+.font {PT Serif}
+.font {Times New Roman} heading:{Times New Roman} code:{SFMono-Regular} size:{11pt}
+</code></pre><figcaption class="caption-bottom" data-location="17.3" data-localized-kind="代码"></figcaption></figure><p>这段的意思是：优先用 <span class="codespan-content"><code>Times New Roman</code></span>，俄语可以走 <span class="codespan-content"><code>Times New Roman</code></span> 或 <span class="codespan-content"><code>PT Serif</code></span>，中文字符如果前面的字体没有字形，就回退到 <span class="codespan-content"><code>PingFang SC</code></span>。</p><p>如果不用 <span class="codespan-content"><code>.font</code></span>，也可以用 <span class="codespan-content"><code>.css</code></span> 写原生 CSS。注意：不要直接写 <span class="codespan-content"><code>&lt;style&gt;...&lt;/style&gt;</code></span>，那样可能会被排成正文。应该写成：</p><figure id="listing-17.4"><pre><code class="language-markdown">.css
+  body {
+    font-family: &quot;Times New Roman&quot;, &quot;PingFang SC&quot;, &quot;Noto Serif CJK SC&quot;, serif;
+  }
+</code></pre><figcaption class="caption-bottom" data-location="17.4" data-localized-kind="代码"></figcaption></figure><p><span class="codespan-content"><code>font-family</code></span> 不是只写一个字体，而是写一个字体列表。渲染器会从左到右寻找可用字体：</p><table id="font-fallback-table"><thead><tr><th>顺序</th><th>字体</th><th>用途</th></tr></thead><tbody><tr><td>1</td><td><span class="codespan-content"><code>Times New Roman</code></span></td><td>英文、俄文衬线字体</td></tr><tr><td>2</td><td><span class="codespan-content"><code>PingFang SC</code></span></td><td>macOS 中文字体</td></tr><tr><td>3</td><td><span class="codespan-content"><code>Noto Serif CJK SC</code></span></td><td>常见 CJK 备用字体</td></tr><tr><td>4</td><td><span class="codespan-content"><code>serif</code></span></td><td>最后的通用兜底</td></tr></tbody><caption class="caption-bottom" data-location="17.1" data-localized-kind="表">全局字体 fallback 顺序</caption></table><p>表 <a href="#font-fallback-table"><span class="cross-reference" data-location="17.1" data-localized-kind="表"></span></a> 里的顺序很重要。中文字体通常也能显示英文，但英文字体通常不能完整显示中文，所以混排时要把拉丁/俄文字体放前面，中文字体放后面兜底。</p><h2 id="推荐字体组合" data-location="17.2">推荐字体组合</h2><table id="font-stack-table"><thead><tr><th>场景</th><th>推荐字体栈</th></tr></thead><tbody><tr><td>中文正文，偏现代</td><td><span class="codespan-content"><code>&quot;PingFang SC&quot;, &quot;Hiragino Sans GB&quot;, &quot;Noto Sans CJK SC&quot;, &quot;Microsoft YaHei&quot;, sans-serif</code></span></td></tr><tr><td>中文正文，偏书籍</td><td><span class="codespan-content"><code>&quot;Songti SC&quot;, &quot;Noto Serif CJK SC&quot;, &quot;SimSun&quot;, serif</code></span></td></tr><tr><td>俄语正文，偏论文</td><td><span class="codespan-content"><code>&quot;PT Serif&quot;, &quot;Times New Roman&quot;, &quot;Georgia&quot;, serif</code></span></td></tr><tr><td>俄语正文，偏现代</td><td><span class="codespan-content"><code>&quot;Inter&quot;, &quot;Arial&quot;, &quot;Helvetica&quot;, sans-serif</code></span></td></tr><tr><td>中俄混排</td><td><span class="codespan-content"><code>&quot;Times New Roman&quot;, &quot;PingFang SC&quot;, &quot;Noto Serif CJK SC&quot;, serif</code></span></td></tr><tr><td>代码</td><td><span class="codespan-content"><code>&quot;SFMono-Regular&quot;, &quot;JetBrains Mono&quot;, &quot;Menlo&quot;, &quot;Consolas&quot;, monospace</code></span></td></tr></tbody><caption class="caption-bottom" data-location="17.2" data-localized-kind="表">中文俄语字体组合</caption></table><p>macOS 上中文常用 <span class="codespan-content"><code>PingFang SC</code></span>、<span class="codespan-content"><code>Songti SC</code></span>、<span class="codespan-content"><code>Hiragino Sans GB</code></span>；Windows 上常用 <span class="codespan-content"><code>Microsoft YaHei</code></span>、<span class="codespan-content"><code>SimSun</code></span>；Linux 或跨平台环境里常用 <span class="codespan-content"><code>Noto Sans CJK SC</code></span>、<span class="codespan-content"><code>Noto Serif CJK SC</code></span>。</p><h2 id="按语言自动指定字体" data-location="17.3">按语言自动指定字体</h2><p>HTML 和 CSS 支持 <span class="codespan-content"><code>lang</code></span> 属性。先用 <span class="codespan-content"><code>.css</code></span> 定义语言规则：</p><figure id="listing-17.5"><pre><code class="language-markdown">.css
+  :lang(zh) {
+    font-family: &quot;PingFang SC&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif;
+  }
+
+  :lang(ru) {
+    font-family: &quot;PT Serif&quot;, &quot;Times New Roman&quot;, serif;
+  }
+</code></pre><figcaption class="caption-bottom" data-location="17.5" data-localized-kind="代码"></figcaption></figure><p>然后在正文里用 HTML 标记语言：</p><p>
+  <span lang="zh">这是一段中文，使用中文字体。</span>
+  <span lang="ru">Это русский текст, использующий русский шрифт.</span>
+</p><p>写法：</p><figure id="listing-17.6"><pre><code class="language-html">&lt;p&gt;
+  &lt;span lang=&quot;zh&quot;&gt;这是一段中文，使用中文字体。&lt;/span&gt;
+  &lt;span lang=&quot;ru&quot;&gt;Это русский текст, использующий русский шрифт.&lt;/span&gt;
+&lt;/p&gt;
+</code></pre><figcaption class="caption-bottom" data-location="17.6" data-localized-kind="代码"></figcaption></figure><p>这种方法适合“语种明确”的内容，比如中文解释后面跟一段俄文原文。</p><h2 id="用-class-精确指定中文字体" data-location="17.4">用 class 精确指定中文字体</h2><p>有时候你不想按语言自动判断，而是想明确指定某一小段使用中文字体。可以先定义 class：</p><figure id="listing-17.7"><pre><code class="language-markdown">.css
+  .font-zh {
+    font-family: &quot;PingFang SC&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif;
+  }
+</code></pre><figcaption class="caption-bottom" data-location="17.7" data-localized-kind="代码"></figcaption></figure><p>然后这样用：</p><div class="container font-zh"><p>这整段都会使用中文字体：春风又绿江南岸，明月何时照我还。</p></div><p>写法：</p><figure id="listing-17.8"><pre><code class="language-markdown">.container classname:{font-zh}
+    这整段都会使用中文字体。
+</code></pre><figcaption class="caption-bottom" data-location="17.8" data-localized-kind="代码"></figcaption></figure><p>如果只想控制一句话中的几个字，可以用 <span class="codespan-content"><code>.html</code></span>：</p><figure id="listing-17.9"><pre><code class="language-markdown">.html
+    这是一句混排文本，&lt;span class=&quot;font-zh&quot;&gt;这几个中文字符指定中文字体&lt;/span&gt;，其余部分走全局字体。
+</code></pre><figcaption class="caption-bottom" data-location="17.9" data-localized-kind="代码"></figcaption></figure><h2 id="用-class-精确指定俄语字体" data-location="17.5">用 class 精确指定俄语字体</h2><p>俄文同理：</p><figure id="listing-17.10"><pre><code class="language-markdown">.css
+  .font-ru {
+    font-family: &quot;PT Serif&quot;, &quot;Times New Roman&quot;, &quot;Georgia&quot;, serif;
+  }
+</code></pre><figcaption class="caption-bottom" data-location="17.10" data-localized-kind="代码"></figcaption></figure><p>实际效果：</p><div class="container font-ru"><p>Это пример русского абзаца. Кириллица должна выглядеть ровно и спокойно.</p></div><p>写法：</p><figure id="listing-17.11"><pre><code class="language-markdown">.container classname:{font-ru}
+    Это пример русского абзаца.
+</code></pre><figcaption class="caption-bottom" data-location="17.11" data-localized-kind="代码"></figcaption></figure><h2 id="中文俄语混用示例" data-location="17.6">中文俄语混用示例</h2><p>混排时推荐一句话里分别标记语言：</p><p>
+  <span lang="zh">术语“注意力机制”在俄语里可以写作</span>
+  <span lang="ru">«механизм внимания»</span>
+  <span lang="zh">，两边分别走中文和俄文字体。</span>
+</p><p>写法：</p><figure id="listing-17.12"><pre><code class="language-markdown">.html
+    &lt;p&gt;
+      &lt;span lang=&quot;zh&quot;&gt;术语&ldquo;注意力机制&rdquo;在俄语里可以写作&lt;/span&gt;
+      &lt;span lang=&quot;ru&quot;&gt;&laquo;механизм внимания&raquo;&lt;/span&gt;
+      &lt;span lang=&quot;zh&quot;&gt;，两边分别走中文和俄文字体。&lt;/span&gt;
+    &lt;/p&gt;
+</code></pre><figcaption class="caption-bottom" data-location="17.12" data-localized-kind="代码"></figcaption></figure><h2 id="用-quarkdown-函数封装字体" data-location="17.7">用 Quarkdown 函数封装字体</h2><p>如果你不想每次手写 <span class="codespan-content"><code>.container classname:{font-zh}</code></span>，可以用 <span class="codespan-content"><code>.function</code></span> 包一层。这个封装适合整段或整块内容：</p><div class="container font-zh"><p>这句话通过自定义函数指定中文字体。</p></div><div class="container font-ru"><p>Это предложение использует пользовательскую функцию для русского шрифта.</p></div><p>写法：</p><figure id="listing-17.13"><pre><code class="language-markdown">.function {zhfont}
+    content:
+    .container classname:{font-zh}
+        .content
+
+.function {rufont}
+    content:
+    .container classname:{font-ru}
+        .content
+
+.zhfont {这句话通过自定义函数指定中文字体。}
+
+.rufont {Это предложение использует пользовательскую функцию для русского шрифта.}
+</code></pre><figcaption class="caption-bottom" data-location="17.13" data-localized-kind="代码"></figcaption></figure><h2 id="使用本地字体文件" data-location="17.8">使用本地字体文件</h2><p>如果你希望别人打开 PDF 或 HTML 时字体完全一致，可以把字体文件放进项目，比如：</p><figure id="listing-17.14"><pre><code class="language-text">assets/
+└─ fonts/
+   ├─ NotoSerifSC-Regular.otf
+   └─ PTSerif-Regular.ttf
+</code></pre><figcaption class="caption-bottom" data-location="17.14" data-localized-kind="代码"></figcaption></figure><p>然后用 <span class="codespan-content"><code>.font</code></span> 直接加载本地字体文件：</p><figure id="listing-17.15"><pre><code class="language-markdown">.font {assets/fonts/NotoSerifSC-Regular.otf}
+.font {assets/fonts/PTSerif-Regular.ttf}
+.font {Times New Roman}
+</code></pre><figcaption class="caption-bottom" data-location="17.15" data-localized-kind="代码"></figcaption></figure><p><span class="codespan-content"><code>.font</code></span> 也支持 URL 和 Google Fonts，比如：</p><figure id="listing-17.16"><pre><code class="language-markdown">.font {GoogleFonts:Noto Serif SC}
+.font {GoogleFonts:PT Serif}
+.font {Times New Roman}
+</code></pre><figcaption class="caption-bottom" data-location="17.16" data-localized-kind="代码"></figcaption></figure><p>如果你需要更细的 class 控制，也可以用 <span class="codespan-content"><code>.css</code></span> 写 <span class="codespan-content"><code>@font-face</code></span>：</p><figure id="listing-17.17"><pre><code class="language-markdown">.css
+  @font-face {
+    font-family: &quot;MyChineseSerif&quot;;
+    src: url(&quot;assets/fonts/NotoSerifSC-Regular.otf&quot;) format(&quot;opentype&quot;);
+  }
+
+  @font-face {
+    font-family: &quot;MyRussianSerif&quot;;
+    src: url(&quot;assets/fonts/PTSerif-Regular.ttf&quot;) format(&quot;truetype&quot;);
+  }
+
+  .font-zh {
+    font-family: &quot;MyChineseSerif&quot;, serif;
+  }
+
+  .font-ru {
+    font-family: &quot;MyRussianSerif&quot;, serif;
+  }
+</code></pre><figcaption class="caption-bottom" data-location="17.17" data-localized-kind="代码"></figcaption></figure><p>这招最适合正式 PDF。代价是项目文件会变大，而且要确认字体授权允许嵌入或分发。</p><h2 id="字体排错清单" data-location="17.9">字体排错清单</h2><p>如果你导出的 PDF 里中文或俄语显示不对，按这个顺序查：</p><ol><li>字体名是否写对。字体家族名不一定等于文件名。</li><li>当前系统是否真的安装了这个字体。</li><li>字体是否覆盖目标字符，比如俄文字体要支持 Cyrillic。</li><li><span class="codespan-content"><code>font-family</code></span> fallback 里有没有可用兜底字体。</li><li>如果用本地字体文件，路径是否相对 <span class="codespan-content"><code>main.qd</code></span> 正确。</li><li>如果发布 HTML，字体文件是否会一起部署。</li></ol><h2 id="quarkdown-里的字体边界" data-location="17.10">Quarkdown 里的字体边界</h2><p><span class="codespan-content"><code>.font</code></span> 适合控制全局字体家族和字号，<span class="codespan-content"><code>.css</code></span> 适合做语言、class、<span class="codespan-content"><code>@font-face</code></span> 这类精细控制。<span class="codespan-content"><code>.container</code></span> 支持 <span class="codespan-content"><code>fontsize</code></span>、<span class="codespan-content"><code>fontweight</code></span>、<span class="codespan-content"><code>fontstyle</code></span>、<span class="codespan-content"><code>fontvariant</code></span> 等文本样式，适合控制字号、粗细、斜体和小型大写。</p><p>例如控制字号和斜体：</p><div class="container size-large" style="padding: 0.4cm 0.4cm 0.4cm 0.4cm; border-color: rgba(148, 163, 184, 1.0); border-style: dashed; font-style: italic;"><p>这是 <span class="codespan-content"><code>.container</code></span> 控制字号和斜体的例子。字体家族仍然由前面的 CSS 决定。</p></div><p>写法：</p><figure id="listing-17.18"><pre><code class="language-markdown">.container padding:{0.4cm} border:{#94a3b8} borderstyle:{dashed} fontsize:{large} fontstyle:{italic}
+    这是 `.container` 控制字号和斜体的例子。
+</code></pre><figcaption class="caption-bottom" data-location="17.18" data-localized-kind="代码"></figcaption></figure><h1 class="page-break" id="多文件项目" data-location="18">多文件项目</h1><p>长文写到一定规模后，可以拆文件。</p><h2 id="include" data-location="18.1">include</h2><p>你可以把章节拆成 <span class="codespan-content"><code>chapters/intro.qd</code></span>，然后在 <span class="codespan-content"><code>main.qd</code></span> 里包含：</p><figure id="listing-18.1"><pre><code class="language-markdown">.include {chapters/intro.qd}
+</code></pre><figcaption class="caption-bottom" data-location="18.1" data-localized-kind="代码"></figcaption></figure><p>拆文件的好处：</p><ul><li>每章更短，更好编辑。</li><li>多语言版本更容易管理。</li><li>图片、代码、数据可以按章节组织。</li></ul><h2 id="推荐目录结构" data-location="18.2">推荐目录结构</h2><figure id="listing-18.2"><pre><code class="language-text">my-book/
+    ├─ main.qd
+    ├─ assets/
+    │  ├─ cover.svg
+    │  └─ workflow.svg
+    ├─ snippets/
+    │  └─ hello.ts
+    └─ chapters/
+       ├─ intro.qd
+       └─ layout.qd
+</code></pre><figcaption class="caption-bottom" data-location="18.2" data-localized-kind="代码"></figcaption></figure><h1 class="page-break" id="调试和编译" data-location="19">调试和编译</h1><h2 id="实时预览" data-location="19.1">实时预览</h2><p>写文档时最常用：</p><figure id="listing-19.1"><pre><code class="language-bash">quarkdown c main.qd -p -w
+</code></pre><figcaption class="caption-bottom" data-location="19.1" data-localized-kind="代码"></figcaption></figure><p><span class="codespan-content"><code>-p</code></span> 打开预览，<span class="codespan-content"><code>-w</code></span> 监听改动。你保存文件后，浏览器会刷新。</p><h2 id="导出-pdf" data-location="19.2">导出 PDF</h2><figure id="listing-19.2"><pre><code class="language-bash">quarkdown c main.qd --pdf
+</code></pre><figcaption class="caption-bottom" data-location="19.2" data-localized-kind="代码"></figcaption></figure><p>如果你做的是 PDF，建议用 <span class="codespan-content"><code>paged</code></span> 类型，并且设置页面：</p><figure id="listing-19.3"><pre><code class="language-markdown">.doctype {paged}
+    .pageformat size:{A4} margin:{2.2cm}
+</code></pre><figcaption class="caption-bottom" data-location="19.3" data-localized-kind="代码"></figcaption></figure><h2 id="严格模式" data-location="19.3">严格模式</h2><p>检查错误时可以用：</p><figure id="listing-19.4"><pre><code class="language-bash">quarkdown c main.qd --strict
+</code></pre><figcaption class="caption-bottom" data-location="19.4" data-localized-kind="代码"></figcaption></figure><p>非严格模式下，某些错误可能显示成文档里的错误盒；严格模式会直接让命令失败，更适合做自动化检查。</p><h2 id="清理输出目录" data-location="19.4">清理输出目录</h2><figure id="listing-19.5"><pre><code class="language-bash">quarkdown c main.qd --clean
+</code></pre><figcaption class="caption-bottom" data-location="19.5" data-localized-kind="代码"></figcaption></figure><p>注意：<span class="codespan-content"><code>--clean</code></span> 会清空输出目录再生成新文件，别把重要文件放到输出目录里。</p><h1 class="page-break" id="常见写作套路" data-location="20">常见写作套路</h1><h2 id="讲义模板" data-location="20.1">讲义模板</h2><figure id="listing-20.1"><pre><code class="language-markdown">.docname {课程讲义}
+    .doctype {paged}
+    .doclang {zh}
+    .pageformat size:{A4} margin:{2cm}
+    .pagemargin {bottomcenter}
+        .currentpage / .totalpages
+    .tableofcontents
+
+    # 第一讲
+
+    正文。
+</code></pre><figcaption class="caption-bottom" data-location="20.1" data-localized-kind="代码"></figcaption></figure><h2 id="技术文章模板" data-location="20.2">技术文章模板</h2><figure id="listing-20.2"><pre><code class="language-markdown">.docname {技术文章}
+    .doctype {plain}
+    .doclang {zh}
+
+    # 问题
+
+    ## 背景
+
+    ## 实现
+
+    ## 总结
+</code></pre><figcaption class="caption-bottom" data-location="20.2" data-localized-kind="代码"></figcaption></figure><h2 id="pdf-报告模板" data-location="20.3">PDF 报告模板</h2><figure id="listing-20.3"><pre><code class="language-markdown">.docname {项目报告}
+    .doctype {paged}
+    .theme {paperwhite} layout:{latex}
+    .numbering
+        - headings: 1.1
+        - figures: 1.1
+        - tables: 1.1
+
+    .center
+        #! 项目报告
+
+    .pagebreak
+    .tableofcontents
+    .pagebreak
+
+    # 摘要
+
+    # 正文
+</code></pre><figcaption class="caption-bottom" data-location="20.3" data-localized-kind="代码"></figcaption></figure><h1 class="page-break" id="函数速查" data-location="21">函数速查</h1><table id="function-cheatsheet"><thead><tr><th>类别</th><th>函数</th><th>说明</th></tr></thead><tbody><tr><td>元信息</td><td><span class="codespan-content"><code>.docname</code></span></td><td>文档名</td></tr><tr><td>元信息</td><td><span class="codespan-content"><code>.docauthors</code></span> / <span class="codespan-content"><code>.docauthor</code></span></td><td>作者</td></tr><tr><td>元信息</td><td><span class="codespan-content"><code>.doctype</code></span></td><td>文档类型</td></tr><tr><td>样式</td><td><span class="codespan-content"><code>.font</code></span></td><td>全局字体和字号</td></tr><tr><td>样式</td><td><span class="codespan-content"><code>.css</code></span></td><td>注入 CSS 美化表格、代码框、盒子</td></tr><tr><td>页面</td><td><span class="codespan-content"><code>.pageformat</code></span></td><td>页面尺寸、边距、栏数</td></tr><tr><td>页面</td><td><span class="codespan-content"><code>.pagemargin</code></span></td><td>页眉页脚和边注</td></tr><tr><td>页面</td><td><span class="codespan-content"><code>.currentpage</code></span> / <span class="codespan-content"><code>.totalpages</code></span></td><td>当前页和总页数</td></tr><tr><td>页面</td><td><span class="codespan-content"><code>.pagebreak</code></span></td><td>手动换页</td></tr><tr><td>目录</td><td><span class="codespan-content"><code>.tableofcontents</code></span></td><td>自动目录</td></tr><tr><td>编号</td><td><span class="codespan-content"><code>.numbering</code></span></td><td>控制章节、图表、公式编号</td></tr><tr><td>引用</td><td><span class="codespan-content"><code>.ref</code></span></td><td>交叉引用</td></tr><tr><td>布局</td><td><span class="codespan-content"><code>.center</code></span> / <span class="codespan-content"><code>.align</code></span></td><td>对齐</td></tr><tr><td>布局</td><td><span class="codespan-content"><code>.row</code></span> / <span class="codespan-content"><code>.column</code></span> / <span class="codespan-content"><code>.grid</code></span></td><td>横排、纵排、网格</td></tr><tr><td>布局</td><td><span class="codespan-content"><code>.float</code></span></td><td>浮动元素</td></tr><tr><td>布局</td><td><span class="codespan-content"><code>.container</code></span></td><td>容器、字号、粗细、斜体</td></tr><tr><td>组件</td><td><span class="codespan-content"><code>.box</code></span></td><td>提示框、警告框</td></tr><tr><td>代码</td><td><span class="codespan-content"><code>.code</code></span></td><td>增强代码块</td></tr><tr><td>图表</td><td><span class="codespan-content"><code>.mermaid</code></span></td><td>Mermaid 图</td></tr><tr><td>数据</td><td><span class="codespan-content"><code>.read</code></span></td><td>读取文件</td></tr><tr><td>脚本</td><td><span class="codespan-content"><code>.var</code></span></td><td>变量</td></tr><tr><td>脚本</td><td><span class="codespan-content"><code>.function</code></span></td><td>自定义函数</td></tr><tr><td>脚本</td><td><span class="codespan-content"><code>.if</code></span></td><td>条件判断</td></tr></tbody><caption class="caption-bottom" data-location="21.1" data-localized-kind="表">Quarkdown 函数速查表</caption></table><p>表 <a href="#function-cheatsheet"><span class="cross-reference" data-location="21.1" data-localized-kind="表"></span></a> 可以当作你以后写 Quarkdown 时的第一页小抄。</p><h1 class="page-break" id="结语" data-location="22">结语</h1><p>Quarkdown 最好的学习方式不是先背完所有函数，而是先写一篇真实文档：封面、目录、图片、表格、公式、页码，这些一旦跑通，你就已经能完成大多数 PDF 和技术长文。</p><p>下一步可以做三件事：</p><ol><li>把这份 <span class="codespan-content"><code>main.qd</code></span> 复制成自己的模板。</li><li>用 <span class="codespan-content"><code>quarkdown c main.qd -p -w</code></span> 边改边看。</li><li>改出一份你自己的讲义、论文笔记或项目说明书。</li></ol><div class="container fullwidth" style="justify-items: center; text-align: center;"><p><em>Original references:</em> <a href="https://quarkdown.com/wiki/">Quarkdown Wiki</a> · <a href="https://quarkdown.com/docs/quarkdown-stdlib">Quarkdown Docs</a></p></div></div>
+  </body>
+</html>

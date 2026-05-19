@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Quarkdown workflow</title>
+  <desc id="desc">A simple workflow from writing source files to compiling HTML and PDF.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#eff6ff"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#0f172a" flood-opacity="0.13"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="620" rx="34" fill="url(#bg)"/>
+  <g filter="url(#shadow)" font-family="Inter, Arial, sans-serif">
+    <rect x="82" y="160" width="220" height="220" rx="28" fill="#ffffff"/>
+    <text x="192" y="230" text-anchor="middle" font-size="25" font-weight="800" fill="#111827">写 main.qd</text>
+    <text x="192" y="280" text-anchor="middle" font-size="17" fill="#475569">Markdown</text>
+    <text x="192" y="314" text-anchor="middle" font-size="17" fill="#475569">函数调用</text>
+    <text x="192" y="348" text-anchor="middle" font-size="17" fill="#475569">图片和资料</text>
+    <rect x="490" y="160" width="220" height="220" rx="28" fill="#ffffff"/>
+    <text x="600" y="230" text-anchor="middle" font-size="25" font-weight="800" fill="#111827">编译</text>
+    <text x="600" y="280" text-anchor="middle" font-size="17" fill="#475569">quarkdown c</text>
+    <text x="600" y="314" text-anchor="middle" font-size="17" fill="#475569">-p -w 预览</text>
+    <text x="600" y="348" text-anchor="middle" font-size="17" fill="#475569">--pdf 导出</text>
+    <rect x="898" y="160" width="220" height="220" rx="28" fill="#ffffff"/>
+    <text x="1008" y="230" text-anchor="middle" font-size="25" font-weight="800" fill="#111827">输出</text>
+    <text x="1008" y="280" text-anchor="middle" font-size="17" fill="#475569">HTML</text>
+    <text x="1008" y="314" text-anchor="middle" font-size="17" fill="#475569">PDF</text>
+    <text x="1008" y="348" text-anchor="middle" font-size="17" fill="#475569">文档站/幻灯片</text>
+  </g>
+  <g stroke="#2563eb" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M325 270 H458"/>
+    <path d="M438 245 L466 270 L438 295"/>
+    <path d="M733 270 H866"/>
+    <path d="M846 245 L874 270 L846 295"/>
+  </g>
+  <text x="600" y="500" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="22" fill="#334155">源文件保持可读，排版能力通过函数渐进增强。</text>
+</svg>
