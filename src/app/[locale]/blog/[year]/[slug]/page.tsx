@@ -23,6 +23,7 @@ import rehypeKatex from "rehype-katex";
 import { preprocessAdmonitions } from "@/lib/mdx-admonitions";
 import { Note, Info, Warning, Danger, Tip, Stale } from "@/components/mdx/Admonition";
 import { MdxImage } from "@/components/mdx/MdxImage";
+import { MarkdownImage } from "@/components/mdx/MarkdownImage";
 
 type PageProps = {
   params: Promise<{ locale: string; year: string; slug: string }>;
@@ -63,7 +64,7 @@ function formatDate(iso: string) {
 const mdxComponents = {
   Note, Info, Warning, Danger, Tip, Stale, MdxImage,
   pre: CodeBlock,
-  img: ({ src, alt }: { src?: string; alt?: string }) => <MdxImage src={src ?? ""} alt={alt} />,
+  img: MarkdownImage,
 };
 
 const mdxOptions = {

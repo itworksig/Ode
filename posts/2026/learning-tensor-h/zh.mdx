@@ -1,0 +1,434 @@
+---
+title: "一步步读懂 tensor.h：用 C 从零理解神经网络"
+date: 2026-05-27
+category: Guide
+eyebrow: 从零机器学习
+summary: "一篇逐步阅读 apoorvnandan/tensor.h 的中文教程：张量、stride、计算图、自动求导、矩阵乘法、激活函数、log-softmax 和 MNIST 训练循环。"
+featured: true
+lang: zh
+tags: [c, machine-learning, neural-networks, autograd, tensors]
+---
+
+[`apoorvnandan/tensor.h`](https://github.com/apoorvnandan/tensor.h) 是一个用原始 C 写的小型神经网络库。这个项目的目标很直接：不用 PyTorch，不用 NumPy，只用数学和 C，从零理解神经网络。
+
+它非常适合作为学习项目。代码足够小，可以读完；同时又包含现代深度学习库背后的几个核心概念：
+
+- 张量是带形状的数组
+- 用 stride 在一维内存里索引 N 维数据
+- 操作会记住自己的输入
+- 数据旁边保存梯度
+- 反向模式自动求导
+- 矩阵乘法、ReLU、log-softmax、mean loss
+- 用梯度更新权重的训练循环
+
+<MdxImage src="/images/learning-tensor-h.svg" alt="tensor.h 学习地图" />
+
+> *图 1 — `tensor.h` 的核心模型：数组变成张量，操作构成计算图，loss 启动反向传播，梯度更新权重。*
+
+这篇文章会一步步读这个项目。重点不是背代码，而是理解一个小 C 程序怎样长出深度学习框架的骨架。
+
+:::note
+这是一篇教学阅读笔记，不是生产建议。`tensor.h` 的价值在于小、透明、能看清机制。真正生产级框架还需要大量工程：内存安全、广播、kernel、图调度、设备管理、测试和数值稳定性。
+:::
+
+## 第一步：从神经网络要解决的问题开始
+
+README 先做了一个很好的对比。有些程序可以直接写规则。例如把 RGB 图片转成灰度，有明确公式：按固定权重合并红、绿、蓝三个通道。
+
+但有些任务很难写规则，比如“判断图片里是猫还是狗”。我们很难手写一套稳定规则覆盖所有图像。于是我们写一个带参数的函数，然后训练这些参数。
+
+大致形式是：
+
+```c
+image -> matrix multiply -> relu -> matrix multiply -> logsoftmax -> prediction
+```
+
+这些操作本身是普通数学操作，真正需要学习的是权重。训练就是找到一组权重，让输出尽量接近标签。
+
+这就是 `tensor.h` 要做的事情：创建张量，执行操作，计算 loss，计算梯度，再沿着降低 loss 的方向移动权重。
+
+## 第二步：理解 `Arr`，也就是原始 N 维数组
+
+底层数据结构是 `Arr`：
+
+```c
+typedef struct {
+    float* values;
+    int* shape;
+    int* strides;
+    int ndim;
+    int size;
+} Arr;
+```
+
+它回答五个问题：
+
+| 字段 | 含义 |
+|---|---|
+| `values` | 真正的数字，存在一维 `float*` 里 |
+| `shape` | 每个维度的长度 |
+| `strides` | 某个索引变化时，在一维数组里要跳多远 |
+| `ndim` | 维度数量 |
+| `size` | 总元素数量 |
+
+关键思想是：N 维张量可以存在一维数组里。`shape` 和 `strides` 告诉你怎么解释这一维内存。
+
+对于形状为 `(P, Q)` 的二维数组，`a[i][k]` 在一维内存中的位置是：
+
+```c
+int pos = i * strides[0] + k * strides[1];
+```
+
+在常见的 row-major 布局里，`strides[1]` 通常是 `1`，`strides[0]` 是列数。
+
+:::tip
+只要理解了 `values + shape + strides`，你就理解了很多张量系统的存储层。后面的东西都是在这个基础上搭起来的。
+:::
+
+## 第三步：创建数组并计算 strides
+
+`create_arr_zeros` 会分配元信息、计算 strides，并分配清零后的 values。
+
+概念上是这样：
+
+```c
+arr->size = 1;
+for (int i = ndim - 1; i >= 0; i--) {
+    arr->strides[i] = arr->size;
+    arr->size *= shape[i];
+}
+arr->values = calloc(arr->size, sizeof(float));
+```
+
+为什么从最后一个维度往前算？
+
+因为最后一个维度是连续的。对于形状 `(2, 3, 4)`：
+
+| 维度 | 含义 | stride |
+|---|---|---|
+| dim 2 | 移动一个元素 | `1` |
+| dim 1 | 跳过一行 4 个元素 | `4` |
+| dim 0 | 跳过一个 3×4 的块 | `12` |
+
+所以索引 `(i, j, k)` 映射为：
+
+```c
+pos = i * 12 + j * 4 + k;
+```
+
+这是项目里的第一个重要模式：数据保持简单，索引逻辑放进元信息。
+
+## 第四步：把数组包装成 `Tensor`
+
+`Arr` 存数据，`Tensor` 存数据、梯度和历史。
+
+```c
+typedef struct Tensor {
+    Arr* data;
+    Arr* grad;
+    int op;
+    struct Tensor* prevs[MAX_PREVS];
+    int num_prevs;
+    Arg args[MAX_ARGS];
+} Tensor;
+```
+
+字段含义：
+
+| 字段 | 含义 |
+|---|---|
+| `data` | 张量值 |
+| `grad` | 最终 loss 对这个张量的梯度 |
+| `op` | 这个张量由哪个操作产生 |
+| `prevs` | 这个操作的输入张量 |
+| `num_prevs` | 输入张量数量 |
+| `args` | 操作额外参数 |
+
+这就是计算图。每个操作创建一个新张量，同时保存指向输入张量的链接。
+
+例如 `c = matmul(a, b)`，那么：
+
+```c
+c->op = MATMUL;
+c->num_prevs = 2;
+c->prevs[0] = a;
+c->prevs[1] = b;
+```
+
+以后反向传播时，库就能问：`c` 是怎么来的？答案就在 `c` 自己身上。
+
+## 第五步：前向操作既计算值，也建立图边
+
+看 elementwise multiplication：
+
+```c
+Tensor* mul(Tensor* a, Tensor* b) {
+    Tensor* t = create_zero_tensor(a->data->shape, a->data->ndim);
+    for (int i = 0; i < a->data->size; i++) {
+        t->data->values[i] = a->data->values[i] * b->data->values[i];
+    }
+    t->op = MUL;
+    t->num_prevs = 2;
+    t->prevs[0] = a;
+    t->prevs[1] = b;
+    return t;
+}
+```
+
+这个函数做两件事：
+
+1. 计算前向结果
+2. 记住结果是怎么来的
+
+第二件事就是自动求导的基础。
+
+`mean`、`relu`、`matmul`、`logsoftmax` 也是同样模式。每个前向操作都会返回一个带历史的新张量。
+
+## 第六步：给 loss 的梯度播种
+
+反向传播从一个标量 loss 开始：
+
+```c
+loss->grad->values[0] = 1.0f;
+backward(loss);
+```
+
+为什么是 `1`？
+
+因为 loss 对自己的导数是 1：
+
+$$
+\frac{\partial L}{\partial L} = 1
+$$
+
+这就是种子。从这个值开始，链式法则会把梯度一路往前传。
+
+## 第七步：`backward` 根据 op 分发
+
+核心反向函数根据操作码调用不同的 backward：
+
+```c
+void backward(Tensor* t) {
+    if (t->op == MUL) {
+        mul_backward(t);
+    } else if (t->op == MEAN) {
+        mean_backward(t);
+    } else if (t->op == MATMUL) {
+        matmul_backward(t);
+    } else if (t->op == RELU) {
+        relu_backward(t);
+    } else if (t->op == LOGSOFTMAX) {
+        logsoftmax_backward(t);
+    }
+    for (int i = 0; i < t->num_prevs; i++) {
+        backward(t->prevs[i]);
+    }
+}
+```
+
+这是最朴素的 autograd 引擎：
+
+1. 看当前张量由什么操作产生
+2. 计算输入张量的梯度
+3. 递归访问前驱张量
+
+大框架会更复杂，需要处理共享节点、拓扑排序、梯度累加、内存复用和设备 kernel。但核心思想仍然相同。
+
+## 第八步：每个操作都要有自己的导数规则
+
+每个 primitive operation 都需要 backward 规则。
+
+乘法：
+
+$$
+z = a \cdot b
+$$
+
+则：
+
+$$
+\frac{\partial z}{\partial a} = b,\qquad
+\frac{\partial z}{\partial b} = a
+$$
+
+所以反向规则是：
+
+```c
+a->grad += out->grad * b->data;
+b->grad += out->grad * a->data;
+```
+
+mean：
+
+$$
+m = \frac{1}{n}\sum_i x_i
+$$
+
+每个输入收到：
+
+$$
+\frac{\partial m}{\partial x_i} = \frac{1}{n}
+$$
+
+ReLU：
+
+$$
+\text{relu}(x) = \max(x, 0)
+$$
+
+输入大于 0 时梯度为 1，否则为 0：
+
+```c
+grad = input > 0 ? out_grad : 0;
+```
+
+这张导数规则表就是 autograd 的核心。库不需要符号代数，只需要每个基础操作知道怎样把梯度传给输入。
+
+## 第九步：矩阵乘法是最重要的操作
+
+前向形状规则：
+
+$$
+(P, Q) \times (Q, R) = (P, R)
+$$
+
+代码结构是三层循环：
+
+```c
+for (int i = 0; i < P; i++) {
+    for (int j = 0; j < R; j++) {
+        float tmp = 0.0f;
+        for (int k = 0; k < Q; k++) {
+            tmp += A[i, k] * B[k, j];
+        }
+        C[i, j] = tmp;
+    }
+}
+```
+
+反向规则：
+
+$$
+dA = dC \cdot B^T
+$$
+
+$$
+dB = A^T \cdot dC
+$$
+
+实现完前向和反向，一个操作就变成了神经网络里的可组合积木。
+
+:::note
+项目在矩阵乘法循环上使用了 OpenMP pragma。这提醒我们：哪怕是教学用张量库，也很快会遇到性能问题。
+:::
+
+## 第十步：log-softmax 和负对数似然
+
+分类任务里，模型会输出每个类别的分数。`logsoftmax` 把原始分数变成 log-probability。
+
+数值稳定写法会先减去最大值：
+
+```c
+maxv = max(row);
+sumexp = sum(exp(x_i - maxv));
+logsoftmax_i = x_i - maxv - log(sumexp);
+```
+
+这样能避免指数爆炸。
+
+在 MNIST 例子里，标签存成负 one-hot。loss 构造为：
+
+```c
+lout = logsoftmax(w2_out);
+mul_out = mul(lout, batch_y);
+loss = mean(mul_out);
+```
+
+正确类别乘以 `-1`，效果类似一个简单的 negative log-likelihood。
+
+## 第十一步：训练循环
+
+`test.c` 的 MNIST 训练循环是经典结构：
+
+```c
+for (int step = 0; step < 5000; step++) {
+    get_random_batch(batch_x, batch_y, x, y, B);
+
+    Tensor* w1_out = matmul(batch_x, w1);
+    Tensor* relu_out = relu(w1_out);
+    Tensor* w2_out = matmul(relu_out, w2);
+    Tensor* lout = logsoftmax(w2_out);
+    Tensor* mul_out = mul(lout, batch_y);
+    Tensor* loss = mean(mul_out);
+
+    loss->grad->values[0] = 1.0f;
+    backward(loss);
+
+    w1 -= learning_rate * w1_grad;
+    w2 -= learning_rate * w2_grad;
+}
+```
+
+翻译成人话：
+
+1. 取一个 batch
+2. 前向运行模型
+3. 计算标量 loss
+4. 把 loss 的梯度设为 1
+5. 反向传播
+6. 更新权重
+7. 清空梯度
+8. 释放临时张量
+
+这就是没有魔法的深度学习。
+
+## 第十二步：这个项目最适合教什么
+
+| 概念 | 代码位置 |
+|---|---|
+| 张量是带形状的一维数组 | `Arr` |
+| 图节点保存历史 | `Tensor` |
+| 操作要记住输入 | `prevs` |
+| 自动求导是局部导数规则 + 图遍历 | `*_backward` 和 `backward` |
+| 训练是重复梯度下降 | `test.c` 里的 MNIST 循环 |
+| C 里内存管理是显式的 | `malloc`、`calloc`、`free_tensor` |
+
+这就是小型 C 项目的好处：没有抽象遮挡，每次分配、每个 stride、每次梯度更新都看得见。
+
+## 第十三步：注意它不是生产库
+
+因为这是一个教学库，你也应该注意它没有完整处理：
+
+- 复杂 shape 检查
+- broadcasting
+- 大量 tensor operations
+- 复杂共享图的拓扑排序
+- 自动内存所有权
+- 主头文件里的 GPU kernel
+- 生产级错误报告
+- 完整测试覆盖
+
+这不是缺点。正是这些省略，让项目保持可读。和 PyTorch/JAX 相比，这些就是大框架额外补上的工程层。
+
+## 第十四步：推荐阅读顺序
+
+建议按这个顺序读：
+
+1. `README.md`，理解动机和故事。
+2. `tensor.h` 开头，读懂 `Arr` 和 `Tensor`。
+3. `create_arr_zeros`，理解 strides。
+4. `mul`、`mean`、`relu`、`matmul`、`logsoftmax` 的前向。
+5. 对应的 `*_backward`。
+6. `backward`，看递归图遍历。
+7. `test.c`，看 MNIST 训练循环。
+8. `dev.c`，看一个更小的调试式前向例子。
+
+这样读，这个项目就像一条从数组到神经网络的导览路线。
+
+## 最后的心智模型
+
+一句话总结：
+
+> `Arr` 存数字；`Tensor` 给数字加上梯度和图历史；操作创建新张量；`backward` 沿图回走并填充梯度；训练循环用梯度更新权重。
+
+这就是反向模式自动求导的核心。大框架让它更快、更安全、更动态、更适合设备。`tensor.h` 让它变得可见。

@@ -1,0 +1,438 @@
+---
+title: "Learning Neural Networks from tensor.h, One Step at a Time"
+date: 2026-05-27
+category: Guide
+eyebrow: From-scratch ML
+summary: "A step-by-step reading guide to apoorvnandan/tensor.h: tensors, strides, computation graphs, autograd, matrix multiplication, activations, log-softmax, and the MNIST training loop."
+featured: true
+lang: en
+tags: [c, machine-learning, neural-networks, autograd, tensors]
+---
+
+[`apoorvnandan/tensor.h`](https://github.com/apoorvnandan/tensor.h) is a tiny neural-network library written in raw C. The project’s README says the goal directly: understand neural networks from scratch, without PyTorch, without NumPy, just math and C.
+
+That makes it a great learning project. It is small enough to read, but it still contains the important ideas behind modern deep learning libraries:
+
+- tensors as shaped arrays
+- strides for indexing N-dimensional data
+- operations that remember their inputs
+- gradients stored beside data
+- reverse-mode automatic differentiation
+- matrix multiplication, ReLU, log-softmax, mean loss
+- a training loop that updates weights from gradients
+
+<MdxImage src="/images/learning-tensor-h.svg" alt="Learning map for tensor.h" />
+
+> *Figure 1 — The mental model of `tensor.h`: arrays become tensors, operations build a graph, loss starts the backward pass, and gradients update weights.*
+
+This post walks through the project step by step. The aim is not to memorize every line, but to understand how a small C program can grow into the skeleton of a deep learning framework.
+
+:::note
+This is an educational reading guide, not a production recommendation. `tensor.h` is valuable because it is small, visible, and honest about the machinery. Production libraries need far more work around memory safety, broadcasting, kernels, graph scheduling, devices, testing, and numerical stability.
+:::
+
+## Step 1: Start with the problem neural networks solve
+
+The README begins with a useful contrast. Some programs are easy to specify by rules. Converting an RGB image to grayscale has a formula: combine red, green, and blue with fixed coefficients. You can write that function directly.
+
+Other tasks are hard to specify with rules. “Tell whether this image contains a cat or a dog” is not easy to write as a normal deterministic function. Instead, we write a parameterized function and train its parameters.
+
+In very rough form:
+
+```c
+image -> matrix multiply -> relu -> matrix multiply -> logsoftmax -> prediction
+```
+
+The “program” has ordinary operations, but the important values are the weights. Training means finding weights that make the output match the labels.
+
+That is the whole reason `tensor.h` exists: create tensors, apply operations, compute a loss, calculate gradients, and move weights in the direction that reduces the loss.
+
+## Step 2: Understand `Arr`, the raw N-dimensional array
+
+The base data structure is `Arr`:
+
+```c
+typedef struct {
+    float* values;
+    int* shape;
+    int* strides;
+    int ndim;
+    int size;
+} Arr;
+```
+
+This struct answers five questions:
+
+| Field | Meaning |
+|---|---|
+| `values` | the actual numbers, stored as one flat `float*` |
+| `shape` | the length of each dimension |
+| `strides` | how far to jump in the flat array when an index changes |
+| `ndim` | number of dimensions |
+| `size` | total number of values |
+
+The key idea is that an N-dimensional tensor can live inside a one-dimensional array. Shape and strides tell you how to interpret it.
+
+For a 2D array with shape `(P, Q)`, the position of `a[i][k]` in flat memory is:
+
+```c
+int pos = i * strides[0] + k * strides[1];
+```
+
+In row-major layout, `strides[1]` is usually `1`, and `strides[0]` is the number of columns.
+
+:::tip
+If you understand `values + shape + strides`, you understand the storage layer of many tensor systems. Everything else builds on this idea.
+:::
+
+## Step 3: Creating arrays and computing strides
+
+The function `create_arr_zeros` allocates the array metadata, computes strides, and allocates zero-filled values.
+
+Conceptually:
+
+```c
+arr->size = 1;
+for (int i = ndim - 1; i >= 0; i--) {
+    arr->strides[i] = arr->size;
+    arr->size *= shape[i];
+}
+arr->values = calloc(arr->size, sizeof(float));
+```
+
+Why iterate from the last dimension backward?
+
+Because the last dimension is contiguous. For shape `(2, 3, 4)`:
+
+| Dimension | Meaning | Stride |
+|---|---|---|
+| dim 2 | move one element | `1` |
+| dim 1 | skip one row of 4 | `4` |
+| dim 0 | skip one block of 3×4 | `12` |
+
+So an index `(i, j, k)` maps to:
+
+```c
+pos = i * 12 + j * 4 + k;
+```
+
+This is the first important pattern in the project: the library keeps the data simple and puts the indexing logic into metadata.
+
+## Step 4: Wrap arrays into `Tensor`
+
+An `Arr` stores data. A `Tensor` stores data plus gradient and history.
+
+```c
+typedef struct Tensor {
+    Arr* data;
+    Arr* grad;
+    int op;
+    struct Tensor* prevs[MAX_PREVS];
+    int num_prevs;
+    Arg args[MAX_ARGS];
+} Tensor;
+```
+
+The fields mean:
+
+| Field | Meaning |
+|---|---|
+| `data` | the tensor values |
+| `grad` | the gradient of the final loss with respect to this tensor |
+| `op` | which operation created this tensor |
+| `prevs` | input tensors used by that operation |
+| `num_prevs` | how many previous tensors there are |
+| `args` | extra operation arguments |
+
+This is the computation graph. Every operation creates a new tensor and stores links back to the tensors that produced it.
+
+For example, if `c = matmul(a, b)`, then:
+
+```c
+c->op = MATMUL;
+c->num_prevs = 2;
+c->prevs[0] = a;
+c->prevs[1] = b;
+```
+
+Later, during backpropagation, the library can ask: “How was `c` created?” The answer is stored inside `c` itself.
+
+## Step 5: Forward operations build both values and graph edges
+
+Take elementwise multiplication:
+
+```c
+Tensor* mul(Tensor* a, Tensor* b) {
+    Tensor* t = create_zero_tensor(a->data->shape, a->data->ndim);
+    for (int i = 0; i < a->data->size; i++) {
+        t->data->values[i] = a->data->values[i] * b->data->values[i];
+    }
+    t->op = MUL;
+    t->num_prevs = 2;
+    t->prevs[0] = a;
+    t->prevs[1] = b;
+    return t;
+}
+```
+
+This function does two jobs:
+
+1. compute the forward value
+2. remember how the value was produced
+
+The second job is what makes automatic differentiation possible.
+
+The same pattern appears in `mean`, `relu`, `matmul`, and `logsoftmax`. Each forward operation returns a new tensor that carries its own little piece of history.
+
+## Step 6: Seed the loss gradient
+
+Backpropagation starts from a scalar loss. If `loss` is the final value, then:
+
+```c
+loss->grad->values[0] = 1.0f;
+backward(loss);
+```
+
+Why set the gradient to `1`?
+
+Because the derivative of the loss with respect to itself is 1:
+
+$$
+\frac{\partial L}{\partial L} = 1
+$$
+
+That single value is the seed. From there, the chain rule pushes gradients backward through every operation.
+
+## Step 7: `backward` dispatches by operation type
+
+The central backward function checks the operation code:
+
+```c
+void backward(Tensor* t) {
+    if (t->op == MUL) {
+        mul_backward(t);
+    } else if (t->op == MEAN) {
+        mean_backward(t);
+    } else if (t->op == MATMUL) {
+        matmul_backward(t);
+    } else if (t->op == RELU) {
+        relu_backward(t);
+    } else if (t->op == LOGSOFTMAX) {
+        logsoftmax_backward(t);
+    }
+    for (int i = 0; i < t->num_prevs; i++) {
+        backward(t->prevs[i]);
+    }
+}
+```
+
+This is the simplest possible autograd engine:
+
+1. look at the operation that produced this tensor
+2. compute gradients for its inputs
+3. recursively walk to previous tensors
+
+In larger frameworks, graph traversal gets much more careful. You have to handle shared nodes, topological ordering, gradient accumulation, memory reuse, and device kernels. But conceptually, this is the same core idea.
+
+## Step 8: Derive backward rules operation by operation
+
+Each operation needs a derivative rule.
+
+For multiplication:
+
+$$
+z = a \cdot b
+$$
+
+Then:
+
+$$
+\frac{\partial z}{\partial a} = b,\qquad
+\frac{\partial z}{\partial b} = a
+$$
+
+So the backward rule is:
+
+```c
+a->grad += out->grad * b->data;
+b->grad += out->grad * a->data;
+```
+
+For mean:
+
+$$
+m = \frac{1}{n}\sum_i x_i
+$$
+
+Each input receives:
+
+$$
+\frac{\partial m}{\partial x_i} = \frac{1}{n}
+$$
+
+So `mean_backward` distributes the output gradient equally over all input elements.
+
+For ReLU:
+
+$$
+\text{relu}(x) = \max(x, 0)
+$$
+
+The gradient is 1 when the input was positive and 0 otherwise.
+
+```c
+grad = input > 0 ? out_grad : 0;
+```
+
+This step-by-step derivative table is the heart of autograd. The library does not need symbolic algebra. It only needs each primitive operation to know how to push gradients to its inputs.
+
+## Step 9: Matrix multiplication is the most important operation
+
+The forward shape rule is:
+
+$$
+(P, Q) \times (Q, R) = (P, R)
+$$
+
+The code loops over `i`, `j`, and `k`:
+
+```c
+for (int i = 0; i < P; i++) {
+    for (int j = 0; j < R; j++) {
+        float tmp = 0.0f;
+        for (int k = 0; k < Q; k++) {
+            tmp += A[i, k] * B[k, j];
+        }
+        C[i, j] = tmp;
+    }
+}
+```
+
+The backward rules are:
+
+$$
+dA = dC \cdot B^T
+$$
+
+$$
+dB = A^T \cdot dC
+$$
+
+That is exactly the kind of formula deep learning frameworks are full of. Once you implement the forward operation and its backward rule, the operation becomes a building block.
+
+:::note
+The project uses OpenMP pragmas around matrix multiplication loops. That is a small but useful reminder: even educational tensor libraries quickly run into performance questions.
+:::
+
+## Step 10: Log-softmax and negative log-likelihood
+
+For classification, the model outputs one score per class. `logsoftmax` converts raw scores into log-probabilities.
+
+The numerically stable version subtracts the maximum value before exponentiating:
+
+```c
+maxv = max(row);
+sumexp = sum(exp(x_i - maxv));
+logsoftmax_i = x_i - maxv - log(sumexp);
+```
+
+This avoids very large exponentials.
+
+In the MNIST training example, labels are stored as negative one-hot values. Then the loss is built as:
+
+```c
+lout = logsoftmax(w2_out);
+mul_out = mul(lout, batch_y);
+loss = mean(mul_out);
+```
+
+Because the correct class is multiplied by `-1`, this behaves like a simple negative log-likelihood loss.
+
+## Step 11: The training loop
+
+The MNIST example in `test.c` follows the classic loop:
+
+```c
+for (int step = 0; step < 5000; step++) {
+    get_random_batch(batch_x, batch_y, x, y, B);
+
+    Tensor* w1_out = matmul(batch_x, w1);
+    Tensor* relu_out = relu(w1_out);
+    Tensor* w2_out = matmul(relu_out, w2);
+    Tensor* lout = logsoftmax(w2_out);
+    Tensor* mul_out = mul(lout, batch_y);
+    Tensor* loss = mean(mul_out);
+
+    loss->grad->values[0] = 1.0f;
+    backward(loss);
+
+    w1 -= learning_rate * w1_grad;
+    w2 -= learning_rate * w2_grad;
+}
+```
+
+In plain English:
+
+1. sample a batch
+2. run the model forward
+3. compute a scalar loss
+4. seed the loss gradient with 1
+5. run backward
+6. update weights
+7. clear gradients
+8. free temporary tensors
+
+That is deep learning without magic.
+
+## Step 12: What the library teaches well
+
+The project is especially good at teaching these ideas:
+
+| Idea | Where it appears |
+|---|---|
+| tensors are shaped flat arrays | `Arr` |
+| graph nodes store history | `Tensor` |
+| operations must remember inputs | `prevs` |
+| autograd is local derivative rules plus graph traversal | `*_backward` and `backward` |
+| training is repeated gradient descent | MNIST loop in `test.c` |
+| memory management is explicit in C | `malloc`, `calloc`, `free_tensor` |
+
+This is why reading small C code is useful. You cannot hide behind abstractions. Every allocation, every stride, every gradient update is visible.
+
+## Step 13: What to be careful about
+
+Because this is a tiny educational library, you should also notice what it does not handle robustly:
+
+- extensive shape checking
+- broadcasting
+- many tensor operations
+- stable graph topological ordering for complicated shared graphs
+- automatic memory ownership
+- GPU kernels in the main header
+- production-quality error reporting
+- full test coverage
+
+That is not a criticism. Those omissions are what make the project readable. But when you compare it with PyTorch or JAX, these are the kinds of engineering layers those systems add.
+
+## Step 14: How to read the repository yourself
+
+Read it in this order:
+
+1. `README.md` for the story and motivation.
+2. `tensor.h` from the top until `Arr` and `Tensor` feel clear.
+3. `create_arr_zeros` to understand strides.
+4. `mul`, `mean`, `relu`, `matmul`, `logsoftmax` forward functions.
+5. The corresponding `*_backward` functions.
+6. `backward` to see the recursive traversal.
+7. `test.c` to see the MNIST training loop.
+8. `dev.c` for a smaller debugging-style forward pass.
+
+If you read it this way, the project becomes a guided tour through the bones of neural networks.
+
+## Final mental model
+
+Here is the whole library in one sentence:
+
+> `Arr` stores numbers; `Tensor` wraps numbers with gradients and graph history; operations create new tensors; `backward` walks the graph and fills gradients; the training loop subtracts those gradients from weights.
+
+That is the essential idea behind reverse-mode automatic differentiation. Big frameworks make it fast, safe, dynamic, device-aware, and pleasant. `tensor.h` makes it visible.

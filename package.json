@@ -18,6 +18,7 @@
     "@fontsource/iosevka-aile": "^5.2.5",
     "@fontsource/podkova": "^5.2.10",
     "gray-matter": "^4.0.3",
+    "github-slugger": "^2.0.0",
     "js-yaml": "^4.1.1",
     "mermaid": "^11.14.0",
     "next": "16.2.3",
